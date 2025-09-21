@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
-
+import { UsersService } from './users/service/users.service';
 @Module({
   imports: [
     MongooseModule.forRootAsync({
@@ -14,5 +14,6 @@ import { UsersModule } from './users/users.module';
     }),
     UsersModule,
   ],
+  providers: [UsersService],
 })
 export class AppModule {}
