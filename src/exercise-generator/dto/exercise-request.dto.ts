@@ -1,10 +1,20 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, MinLength, MaxLength, IsMongoId } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApiSchema } from '@nestjs/swagger';
 import { Game } from '../enum/game.enum';
 
 @ApiSchema({ name: 'ExerciseRequestDTO', description: 'Exercise generation request DTO' })
 export class ExerciseRequestDTO {
+
+  @ApiProperty({
+    description: 'ID of the user creating the exercise',
+    example: '507f1f77bcf86cd799439011',
+    required: true
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'User ID is required' })
+  @IsMongoId({ message: 'User ID must be a valid MongoDB ObjectId' })
+  userId: string;
 
   @ApiProperty({
     description: 'Topic for the educational session that will be generated',

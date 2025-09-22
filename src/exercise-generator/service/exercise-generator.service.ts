@@ -1,17 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ExerciseRequestDTO } from '../dto/exercise-request.dto';
 import { ExerciseResponseDto } from '../dto/exercise-response.dto';
 import { Game } from '../enum/game.enum';
 import { GeminiResponseMapper } from '../mapper';
+import { Exercise, ExerciseDocument } from '../model/exercise.model';
 
 @Injectable()
 export class ExerciseGeneratorService {
   private readonly logger = new Logger(ExerciseGeneratorService.name);
   private readonly genAI: GoogleGenerativeAI;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectModel(Exercise.name) private exerciseModel: Model<ExerciseDocument>,
+  ) {
     const apiKey = this.configService.get<string>('GEMINI_KEY');
     if (!apiKey) {
       throw new Error('GEMINI_KEY is not configured in environment variables');
@@ -21,10 +27,11 @@ export class ExerciseGeneratorService {
 
   async generateExercise(
     request: ExerciseRequestDTO,
+    userId: string,
   ): Promise<ExerciseResponseDto> {
     try {
       this.logger.log(
-        `Generating ${request.gameType} exercise for topic: ${request.topic}`,
+        `Generating ${request.gameType} exercise for topic: ${request.topic} by user: ${userId}`,
       );
 
       const prompt = this.buildPrompt(request);
@@ -38,7 +45,36 @@ export class ExerciseGeneratorService {
 
       // Parse the JSON response and map to DTOs
       const parsedResponse = GeminiResponseMapper.parseGeminiResponse(generatedText);
-      return GeminiResponseMapper.mapToExerciseResponseDto(parsedResponse, request.gameType);
+      const exerciseDto = GeminiResponseMapper.mapToExerciseResponseDto(parsedResponse, request.gameType);
+      
+      // Save exercise to database
+      const exercise = new this.exerciseModel({
+        userId,
+        game: exerciseDto.game,
+        questions: exerciseDto.questions?.map(q => ({
+          question: q.question,
+          sentence: q.sentence,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+        })),
+        word: exerciseDto.word,
+        hint: exerciseDto.hint,
+        topic: request.topic,
+        difficulty: request.difficulty,
+        targetAudience: request.targetAudience,
+      });
+
+      const savedExercise = await exercise.save();
+      
+      // Update DTO with database info
+      exerciseDto.id = savedExercise._id.toString();
+      exerciseDto.createdAt = savedExercise.createdAt;
+      exerciseDto.updatedAt = savedExercise.updatedAt;
+
+      this.logger.log(`Exercise saved with ID: ${exerciseDto.id}`);
+      
+      return exerciseDto;
     } catch (error) {
       this.logger.error('Error generating exercise:', error);
       
@@ -123,6 +159,54 @@ ${gameInstructions}
 Tema: ${request.topic}${difficultyText}${audienceText}${itemsText}${instructionsText}
 
 Responde SOLO con el JSON del juego, sin texto adicional.`;
+  }
+
+  async getUserExercises(userId: string): Promise<ExerciseDocument[]> {
+    try {
+      this.logger.log(`Fetching exercises for user: ${userId}`);
+      
+      return await this.exerciseModel
+        .find({ userId })
+        .sort({ createdAt: -1 })
+        .exec();
+    } catch (error) {
+      this.logger.error('Error fetching user exercises:', error);
+      throw new Error(`Failed to fetch exercises: ${error.message}`);
+    }
+  }
+
+  async getExerciseById(exerciseId: string, userId: string): Promise<ExerciseDocument> {
+    try {
+      this.logger.log(`Fetching exercise: ${exerciseId} for user: ${userId}`);
+      
+      const exercise = await this.exerciseModel
+        .findOne({ _id: exerciseId, userId })
+        .exec();
+
+      if (!exercise) {
+        throw new Error('Exercise not found or access denied');
+      }
+
+      return exercise;
+    } catch (error) {
+      this.logger.error('Error fetching exercise:', error);
+      throw new Error(`Failed to fetch exercise: ${error.message}`);
+    }
+  }
+
+  async deleteExercise(exerciseId: string, userId: string): Promise<boolean> {
+    try {
+      this.logger.log(`Deleting exercise: ${exerciseId} for user: ${userId}`);
+      
+      const result = await this.exerciseModel
+        .deleteOne({ _id: exerciseId, userId })
+        .exec();
+
+      return result.deletedCount > 0;
+    } catch (error) {
+      this.logger.error('Error deleting exercise:', error);
+      throw new Error(`Failed to delete exercise: ${error.message}`);
+    }
   }
 
 }

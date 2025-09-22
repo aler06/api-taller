@@ -4,7 +4,11 @@ import {
   Body, 
   HttpException, 
   HttpStatus,
-  HttpCode
+  HttpCode,
+  Get,
+  Delete,
+  Param,
+  Query
 } from '@nestjs/common';
 import { 
   ApiTags, 
@@ -12,11 +16,13 @@ import {
   ApiResponse, 
   ApiBody,
   ApiBadRequestResponse,
-  ApiInternalServerErrorResponse
+  ApiInternalServerErrorResponse,
+  ApiQuery
 } from '@nestjs/swagger';
 import { ExerciseGeneratorService } from '../service/exercise-generator.service';
 import { ExerciseRequestDTO } from '../dto/exercise-request.dto';
 import { ExerciseResponseDto } from '../dto/exercise-response.dto';
+import { ExerciseByIdRequestDTO } from '../dto/exercise-by-id-request.dto';
 
 @ApiTags('Exercise Generator')
 @Controller('exercise-generator')
@@ -52,6 +58,7 @@ export class ExerciseGeneratorController {
         summary: 'Basic geography quiz',
         description: 'Example of a simple quiz about European geography',
         value: {
+          userId: '507f1f77bcf86cd799439011',
           topic: 'European Geography',
           gameType: 'quiz',
           difficulty: 'beginner',
@@ -63,6 +70,7 @@ export class ExerciseGeneratorController {
         summary: 'Programming hangman game',
         description: 'Hangman game with programming terms',
         value: {
+          userId: '507f1f77bcf86cd799439012',
           topic: 'Programming Concepts',
           gameType: 'hangman',
           difficulty: 'intermediate',
@@ -74,6 +82,7 @@ export class ExerciseGeneratorController {
         summary: 'Fill in the blank - History',
         description: 'Advanced exercise for completing historical sentences',
         value: {
+          userId: '507f1f77bcf86cd799439013',
           topic: 'Industrial Revolution',
           gameType: 'fill_in_the_blank',
           difficulty: 'advanced',
@@ -172,7 +181,7 @@ export class ExerciseGeneratorController {
     @Body() request: ExerciseRequestDTO
   ): Promise<ExerciseResponseDto> {
     try {
-      return await this.exerciseGeneratorService.generateExercise(request);
+      return await this.exerciseGeneratorService.generateExercise(request, request.userId);
     } catch (error) {
       throw new HttpException(
         {
@@ -181,6 +190,152 @@ export class ExerciseGeneratorController {
           error: 'Internal Server Error',
           timestamp: new Date().toISOString(),
           details: 'Please verify input parameters and try again. If the problem persists, contact the administrator.'
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get('my-exercises')
+  @ApiOperation({ 
+    summary: 'Get user exercises',
+    description: 'Retrieve all exercises created by the specified user'
+  })
+  @ApiQuery({
+    name: 'userId',
+    description: 'ID of the user to retrieve exercises for',
+    example: '507f1f77bcf86cd799439011',
+    required: true
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'User exercises retrieved successfully',
+    type: [ExerciseResponseDto]
+  })
+  async getUserExercises(@Query('userId') userId: string): Promise<ExerciseResponseDto[]> {
+    try {
+      const exercises = await this.exerciseGeneratorService.getUserExercises(userId);
+      
+      return exercises.map(exercise => ({
+        id: exercise._id.toString(),
+        game: exercise.game,
+        questions: exercise.questions?.map(q => ({
+          question: q.question,
+          sentence: q.sentence,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+        })),
+        word: exercise.word,
+        hint: exercise.hint,
+        createdAt: exercise.createdAt,
+        updatedAt: exercise.updatedAt,
+      }));
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: `Error retrieving exercises: ${error.message}`,
+          error: 'Internal Server Error',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get('exercise')
+  @ApiOperation({ 
+    summary: 'Get exercise by ID',
+    description: 'Retrieve a specific exercise by its ID'
+  })
+  @ApiQuery({
+    name: 'exerciseId',
+    description: 'ID of the exercise to retrieve',
+    example: '507f1f77bcf86cd799439014',
+    required: true
+  })
+  @ApiQuery({
+    name: 'userId',
+    description: 'ID of the user requesting the exercise',
+    example: '507f1f77bcf86cd799439011',
+    required: true
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Exercise retrieved successfully',
+    type: ExerciseResponseDto
+  })
+  async getExerciseById(
+    @Query('exerciseId') exerciseId: string,
+    @Query('userId') userId: string
+  ): Promise<ExerciseResponseDto> {
+    try {
+      const exercise = await this.exerciseGeneratorService.getExerciseById(exerciseId, userId);
+      
+      return {
+        id: exercise._id.toString(),
+        game: exercise.game,
+        questions: exercise.questions?.map(q => ({
+          question: q.question,
+          sentence: q.sentence,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+        })),
+        word: exercise.word,
+        hint: exercise.hint,
+        createdAt: exercise.createdAt,
+        updatedAt: exercise.updatedAt,
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `Exercise not found: ${error.message}`,
+          error: 'Not Found',
+        },
+        HttpStatus.NOT_FOUND
+      );
+    }
+  }
+
+  @Delete('exercise')
+  @HttpCode(204)
+  @ApiOperation({ 
+    summary: 'Delete exercise',
+    description: 'Delete a specific exercise by its ID'
+  })
+  @ApiBody({ 
+    type: ExerciseByIdRequestDTO,
+    description: 'Exercise ID and User ID to delete exercise'
+  })
+  @ApiResponse({ 
+    status: 204, 
+    description: 'Exercise deleted successfully'
+  })
+  async deleteExercise(@Body() request: ExerciseByIdRequestDTO): Promise<void> {
+    try {
+      const deleted = await this.exerciseGeneratorService.deleteExercise(request.exerciseId, request.userId);
+      
+      if (!deleted) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'Exercise not found or access denied',
+            error: 'Not Found',
+          },
+          HttpStatus.NOT_FOUND
+        );
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: `Error deleting exercise: ${error.message}`,
+          error: 'Internal Server Error',
         },
         HttpStatus.INTERNAL_SERVER_ERROR
       );

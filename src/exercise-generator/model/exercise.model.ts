@@ -1,12 +1,19 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { Question } from './question.model';
 import { Game } from '../enum/game.enum';
 
-export type ExerciseDocument = Exercise & Document;
+export type ExerciseDocument = Exercise & Document & {
+  _id: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 @Schema({ timestamps: true })
 export class Exercise {
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+    userId: Types.ObjectId;
+
     @Prop({ required: true, enum: Game })
     game: Game;
 
@@ -18,6 +25,15 @@ export class Exercise {
 
     @Prop({ required: false })
     hint?: string;
+
+    @Prop({ required: false })
+    topic?: string;
+
+    @Prop({ required: false })
+    difficulty?: string;
+
+    @Prop({ required: false })
+    targetAudience?: string;
 }
 
 export const ExerciseSchema = SchemaFactory.createForClass(Exercise);
