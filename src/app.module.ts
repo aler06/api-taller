@@ -2,9 +2,12 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
-import { UsersService } from './users/service/users.service';
+
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -14,6 +17,5 @@ import { UsersService } from './users/service/users.service';
     }),
     UsersModule,
   ],
-  providers: [UsersService],
 })
 export class AppModule {}
