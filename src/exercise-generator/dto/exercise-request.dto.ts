@@ -1,0 +1,73 @@
+import { IsString, IsNotEmpty, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { ApiSchema } from '@nestjs/swagger';
+import { Game } from '../enum/game.enum';
+
+@ApiSchema({ name: 'ExerciseRequestDTO', description: 'Exercise generation request DTO' })
+export class ExerciseRequestDTO {
+
+  @ApiProperty({
+    description: 'Topic for the educational session that will be generated',
+    example: 'Geografía de Europa',
+    minLength: 3,
+    maxLength: 200
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Topic is required' })
+  @MinLength(3, { message: 'Topic must be at least 3 characters long' })
+  @MaxLength(200, { message: 'Topic must not exceed 200 characters' })
+  topic: string;
+
+  @ApiProperty({
+    description: 'Type of interactive game to generate for the educational session',
+    example: 'quiz',
+    enum: Game
+  })
+  @IsEnum(Game, { message: 'Game type must be one of: quiz, hangman, fill_in_the_blank' })
+  @IsNotEmpty({ message: 'Game type is required' })
+  gameType: Game;
+
+  @ApiProperty({
+    description: 'Difficulty level for the educational content and game',
+    example: 'intermediate',
+    enum: ['beginner', 'intermediate', 'advanced'],
+    required: false
+  })
+  @IsOptional()
+  @IsEnum(['beginner', 'intermediate', 'advanced'], { 
+    message: 'Difficulty must be one of: beginner, intermediate, advanced' 
+  })
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+
+  @ApiProperty({
+    description: 'Target audience for the educational session',
+    example: 'university students',
+    required: false,
+    maxLength: 100
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100, { message: 'Target audience must not exceed 100 characters' })
+  targetAudience?: string;
+
+  @ApiProperty({
+    description: 'Additional instructions or specific requirements for the session',
+    example: 'Focus on European capitals and include historical context',
+    required: false,
+    maxLength: 500
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: 'Additional instructions must not exceed 500 characters' })
+  additionalInstructions?: string;
+
+  @ApiProperty({
+    description: 'Number of questions/items to generate for the game (for quiz, number of questions; for hangman, number of words)',
+    example: 5,
+    minimum: 1,
+    maximum: 20,
+    required: false
+  })
+  @IsOptional()
+  numberOfItems?: number;
+}
