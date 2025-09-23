@@ -25,10 +25,7 @@ export class ExerciseGeneratorService {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  async generateExercise(
-    request: ExerciseRequestDTO,
-    userId: string,
-  ): Promise<ExerciseResponseDto> {
+  async generateExercise(request: ExerciseRequestDTO, userId: string,): Promise<ExerciseResponseDto> {
     try {
       this.logger.log(
         `Generating ${request.gameType} exercise for topic: ${request.topic} by user: ${userId}`,
@@ -93,7 +90,7 @@ export class ExerciseGeneratorService {
     }
   }
 
-  private buildPrompt(request: ExerciseRequestDTO): string {
+  private buildPrompt(request: ExerciseRequestDTO): string {  
     const difficultyText = request.difficulty
       ? ` con nivel de dificultad ${request.difficulty}`
       : '';
@@ -141,6 +138,7 @@ Ejemplo de schema para llenar espacios en blanco:
   "preguntas": [
     {
       "oracion": "La capital de Francia es ____.",
+      "alternativas": ["Madrid", "París", "Roma", "Berlín"],
       "respuesta_correcta": "París",
       "explicacion": "París es la capital de Francia desde el siglo X."
     }

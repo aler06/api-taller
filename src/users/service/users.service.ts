@@ -71,8 +71,7 @@ export class UsersService {
             }
 
             const updatedUser = await this.userModel.findByIdAndUpdate(
-                id,
-                updateData,
+                id, updateData,
                 { new: true, runValidators: true }
             );
 

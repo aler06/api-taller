@@ -1,23 +1,23 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  HttpException, 
+import {
+  Controller,
+  Post,
+  Body,
+  HttpException,
   HttpStatus,
   HttpCode,
   Get,
   Delete,
   Param,
-  Query
+  Query,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   ApiBody,
   ApiBadRequestResponse,
   ApiInternalServerErrorResponse,
-  ApiQuery
+  ApiQuery,
 } from '@nestjs/swagger';
 import { ExerciseGeneratorService } from '../service/exercise-generator.service';
 import { ExerciseRequestDTO } from '../dto/exercise-request.dto';
@@ -28,12 +28,12 @@ import { ExerciseByIdRequestDTO } from '../dto/exercise-by-id-request.dto';
 @Controller('exercise-generator')
 export class ExerciseGeneratorController {
   constructor(
-    private readonly exerciseGeneratorService: ExerciseGeneratorService
+    private readonly exerciseGeneratorService: ExerciseGeneratorService,
   ) {}
 
   @Post()
   @HttpCode(201)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Generate interactive educational exercise',
     description: `
       Generates an interactive educational exercise using artificial intelligence (Gemini API).
@@ -41,16 +41,16 @@ export class ExerciseGeneratorController {
       **Available game types:**
       - **Quiz**: Multiple choice questions with explanations
       - **Hangman**: Words to guess with hints
-      - **Fill in the blank**: Sentences with blank spaces to complete
+      - **Fill in the blank**: Sentences with blank spaces to complete using multiple choice options
       
       **Features:**
       - AI-generated educational content
       - Adaptable to different difficulty levels
       - Customizable according to target audience
       - Structured responses in JSON format
-    `
+    `,
   })
-  @ApiBody({ 
+  @ApiBody({
     type: ExerciseRequestDTO,
     description: 'Parameters for educational exercise generation',
     examples: {
@@ -63,8 +63,8 @@ export class ExerciseGeneratorController {
           gameType: 'quiz',
           difficulty: 'beginner',
           targetAudience: 'high school students',
-          numberOfItems: 5
-        }
+          numberOfItems: 5,
+        },
       },
       intermediate_hangman: {
         summary: 'Programming hangman game',
@@ -75,8 +75,9 @@ export class ExerciseGeneratorController {
           gameType: 'hangman',
           difficulty: 'intermediate',
           targetAudience: 'university students',
-          additionalInstructions: 'Focus on fundamental terms like variables, functions, algorithms'
-        }
+          additionalInstructions:
+            'Focus on fundamental terms like variables, functions, algorithms',
+        },
       },
       advanced_fill_blank: {
         summary: 'Fill in the blank - History',
@@ -88,13 +89,13 @@ export class ExerciseGeneratorController {
           difficulty: 'advanced',
           targetAudience: 'university students',
           numberOfItems: 8,
-          additionalInstructions: 'Include important dates and key figures'
-        }
-      }
-    }
+          additionalInstructions: 'Include important dates and key figures',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Exercise generated successfully',
     type: ExerciseResponseDto,
     content: {
@@ -110,12 +111,13 @@ export class ExerciseGeneratorController {
                   question: 'What is the capital of France?',
                   options: ['Madrid', 'Paris', 'Rome', 'Berlin'],
                   correct_answer: 'Paris',
-                  explanation: 'Paris is the capital and most populous city of France since the 10th century.'
-                }
+                  explanation:
+                    'Paris is the capital and most populous city of France since the 10th century.',
+                },
               ],
               createdAt: '2024-01-15T10:30:00.000Z',
-              updatedAt: '2024-01-15T10:30:00.000Z'
-            }
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
           },
           hangman_example: {
             summary: 'Hangman Response',
@@ -125,14 +127,31 @@ export class ExerciseGeneratorController {
               word: 'programming',
               hint: 'The process of creating instructions for a computer to execute specific tasks',
               createdAt: '2024-01-15T10:30:00.000Z',
-              updatedAt: '2024-01-15T10:30:00.000Z'
-            }
-          }
-        }
-      }
-    }
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
+          },
+          fill_in_the_blank_example: {
+            summary: 'Fill in the Blank Response',
+            value: {
+              id: 'ex_fill123blank',
+              game: 'fill_in_the_blank',
+              questions: [
+                {
+                  sentence: 'The capital of France is ____.',
+                  options: ['Madrid', 'Paris', 'Rome', 'Berlin'],
+                  correct_answer: 'Paris',
+                  explanation: 'Paris is the capital and most populous city of France since the 10th century.',
+                },
+              ],
+              createdAt: '2024-01-15T10:30:00.000Z',
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
+          },
+        },
+      },
+    },
   })
-  @ApiBadRequestResponse({ 
+  @ApiBadRequestResponse({
     description: 'Invalid request parameters',
     content: {
       'application/json': {
@@ -143,16 +162,16 @@ export class ExerciseGeneratorController {
               statusCode: 400,
               message: [
                 'Topic is required',
-                'Game type must be one of: quiz, hangman, fill_in_the_blank'
+                'Game type must be one of: quiz, hangman, fill_in_the_blank',
               ],
-              error: 'Bad Request'
-            }
-          }
-        }
-      }
-    }
+              error: 'Bad Request',
+            },
+          },
+        },
+      },
+    },
   })
-  @ApiInternalServerErrorResponse({ 
+  @ApiInternalServerErrorResponse({
     description: 'Internal server error during generation',
     content: {
       'application/json': {
@@ -162,26 +181,25 @@ export class ExerciseGeneratorController {
             value: {
               statusCode: 500,
               message: 'Failed to generate exercise: API rate limit exceeded',
-              error: 'Internal Server Error'
-            }
+              error: 'Internal Server Error',
+            },
           },
           parsing_error: {
             summary: 'Parsing Error',
             value: {
               statusCode: 500,
-              message: 'Failed to generate exercise: Invalid JSON response from Gemini API',
-              error: 'Internal Server Error'
-            }
-          }
-        }
-      }
-    }
+              message:
+                'Failed to generate exercise: Invalid JSON response from Gemini API',
+              error: 'Internal Server Error',
+            },
+          },
+        },
+      },
+    },
   })
-  async generateExercise(
-    @Body() request: ExerciseRequestDTO
-  ): Promise<ExerciseResponseDto> {
+  async generateExercise(@Body() request: ExerciseRequestDTO,): Promise<ExerciseResponseDto> {
     try {
-      return await this.exerciseGeneratorService.generateExercise(request, request.userId);
+      return await this.exerciseGeneratorService.generateExercise(request, request.userId,);
     } catch (error) {
       throw new HttpException(
         {
@@ -189,37 +207,39 @@ export class ExerciseGeneratorController {
           message: `Error generating exercise: ${error.message}`,
           error: 'Internal Server Error',
           timestamp: new Date().toISOString(),
-          details: 'Please verify input parameters and try again. If the problem persists, contact the administrator.'
+          details:
+            'Please verify input parameters and try again. If the problem persists, contact the administrator.',
         },
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   @Get('my-exercises')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get user exercises',
-    description: 'Retrieve all exercises created by the specified user'
+    description: 'Retrieve all exercises created by the specified user',
   })
   @ApiQuery({
     name: 'userId',
     description: 'ID of the user to retrieve exercises for',
     example: '507f1f77bcf86cd799439011',
-    required: true
+    required: true,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User exercises retrieved successfully',
-    type: [ExerciseResponseDto]
+    type: [ExerciseResponseDto],
   })
-  async getUserExercises(@Query('userId') userId: string): Promise<ExerciseResponseDto[]> {
+  async getUserExercises(@Query('userId') userId: string,): Promise<ExerciseResponseDto[]> {
     try {
-      const exercises = await this.exerciseGeneratorService.getUserExercises(userId);
-      
-      return exercises.map(exercise => ({
+      const exercises =
+        await this.exerciseGeneratorService.getUserExercises(userId);
+
+      return exercises.map((exercise) => ({
         id: exercise._id.toString(),
         game: exercise.game,
-        questions: exercise.questions?.map(q => ({
+        questions: exercise.questions?.map((q) => ({
           question: q.question,
           sentence: q.sentence,
           options: q.options,
@@ -238,44 +258,44 @@ export class ExerciseGeneratorController {
           message: `Error retrieving exercises: ${error.message}`,
           error: 'Internal Server Error',
         },
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   @Get('exercise')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get exercise by ID',
-    description: 'Retrieve a specific exercise by its ID'
+    description: 'Retrieve a specific exercise by its ID',
   })
   @ApiQuery({
     name: 'exerciseId',
     description: 'ID of the exercise to retrieve',
     example: '507f1f77bcf86cd799439014',
-    required: true
+    required: true,
   })
   @ApiQuery({
     name: 'userId',
     description: 'ID of the user requesting the exercise',
     example: '507f1f77bcf86cd799439011',
-    required: true
+    required: true,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Exercise retrieved successfully',
-    type: ExerciseResponseDto
+    type: ExerciseResponseDto,
   })
-  async getExerciseById(
-    @Query('exerciseId') exerciseId: string,
-    @Query('userId') userId: string
-  ): Promise<ExerciseResponseDto> {
+  async getExerciseById(@Query('exerciseId') exerciseId: string, @Query('userId') userId: string,): Promise<ExerciseResponseDto> {
     try {
-      const exercise = await this.exerciseGeneratorService.getExerciseById(exerciseId, userId);
-      
+      const exercise = await this.exerciseGeneratorService.getExerciseById(
+        exerciseId,
+        userId,
+      );
+
       return {
         id: exercise._id.toString(),
         game: exercise.game,
-        questions: exercise.questions?.map(q => ({
+        questions: exercise.questions?.map((q) => ({
           question: q.question,
           sentence: q.sentence,
           options: q.options,
@@ -294,29 +314,32 @@ export class ExerciseGeneratorController {
           message: `Exercise not found: ${error.message}`,
           error: 'Not Found',
         },
-        HttpStatus.NOT_FOUND
+        HttpStatus.NOT_FOUND,
       );
     }
   }
 
   @Delete('exercise')
   @HttpCode(204)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete exercise',
-    description: 'Delete a specific exercise by its ID'
+    description: 'Delete a specific exercise by its ID',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: ExerciseByIdRequestDTO,
-    description: 'Exercise ID and User ID to delete exercise'
+    description: 'Exercise ID and User ID to delete exercise',
   })
-  @ApiResponse({ 
-    status: 204, 
-    description: 'Exercise deleted successfully'
+  @ApiResponse({
+    status: 204,
+    description: 'Exercise deleted successfully',
   })
   async deleteExercise(@Body() request: ExerciseByIdRequestDTO): Promise<void> {
     try {
-      const deleted = await this.exerciseGeneratorService.deleteExercise(request.exerciseId, request.userId);
-      
+      const deleted = await this.exerciseGeneratorService.deleteExercise(
+        request.exerciseId,
+        request.userId,
+      );
+
       if (!deleted) {
         throw new HttpException(
           {
@@ -324,7 +347,7 @@ export class ExerciseGeneratorController {
             message: 'Exercise not found or access denied',
             error: 'Not Found',
           },
-          HttpStatus.NOT_FOUND
+          HttpStatus.NOT_FOUND,
         );
       }
     } catch (error) {
@@ -337,7 +360,7 @@ export class ExerciseGeneratorController {
           message: `Error deleting exercise: ${error.message}`,
           error: 'Internal Server Error',
         },
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

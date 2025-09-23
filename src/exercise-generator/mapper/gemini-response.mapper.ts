@@ -22,6 +22,7 @@ export interface GeminiFillInTheBlankResponse {
   juego: string;
   preguntas: Array<{
     oracion: string;
+    alternativas: string[];
     respuesta_correcta: string;
     explicacion: string;
   }>;
@@ -33,10 +34,7 @@ export type GeminiResponse =
   | GeminiFillInTheBlankResponse;
 
 export class GeminiResponseMapper {
-  static mapToExerciseResponseDto(
-    geminiResponse: GeminiResponse,
-    gameType: Game,
-  ): ExerciseResponseDto {
+  static mapToExerciseResponseDto(geminiResponse: GeminiResponse, gameType: Game,): ExerciseResponseDto {
     const exercise: ExerciseResponseDto = {
       id: this.generateTempId(),
       game: gameType,
@@ -52,9 +50,7 @@ export class GeminiResponseMapper {
         return this.mapHangmanResponse(exercise, geminiResponse as GeminiHangmanResponse);
 
       case Game.FILL_IN_THE_BLANK:
-        return this.mapFillInTheBlankResponse(
-          exercise,
-          geminiResponse as GeminiFillInTheBlankResponse,
+        return this.mapFillInTheBlankResponse(exercise,geminiResponse as GeminiFillInTheBlankResponse,
         );
 
       default:
@@ -62,10 +58,7 @@ export class GeminiResponseMapper {
     }
   }
 
-  private static mapQuizResponse(
-    exercise: ExerciseResponseDto,
-    quizResponse: GeminiQuizResponse,
-  ): ExerciseResponseDto {
+  private static mapQuizResponse(exercise: ExerciseResponseDto, quizResponse: GeminiQuizResponse,): ExerciseResponseDto {
     exercise.questions =
       quizResponse.preguntas?.map((pregunta): QuestionResponseDto => ({
         question: pregunta.pregunta,
@@ -77,23 +70,18 @@ export class GeminiResponseMapper {
     return exercise;
   }
 
-  private static mapHangmanResponse(
-    exercise: ExerciseResponseDto,
-    hangmanResponse: GeminiHangmanResponse,
-  ): ExerciseResponseDto {
+  private static mapHangmanResponse(exercise: ExerciseResponseDto, hangmanResponse: GeminiHangmanResponse,): ExerciseResponseDto {
     exercise.word = hangmanResponse.palabra;
     exercise.hint = hangmanResponse.pista;
 
     return exercise;
   }
 
-  private static mapFillInTheBlankResponse(
-    exercise: ExerciseResponseDto,
-    fillBlankResponse: GeminiFillInTheBlankResponse,
-  ): ExerciseResponseDto {
+  private static mapFillInTheBlankResponse(exercise: ExerciseResponseDto, fillBlankResponse: GeminiFillInTheBlankResponse,): ExerciseResponseDto {
     exercise.questions =
       fillBlankResponse.preguntas?.map((pregunta): QuestionResponseDto => ({
         sentence: pregunta.oracion,
+        options: pregunta.alternativas,
         correct_answer: pregunta.respuesta_correcta,
         explanation: pregunta.explicacion,
       })) || [];
@@ -112,7 +100,6 @@ export class GeminiResponseMapper {
       if (!jsonMatch) {
         throw new Error('No valid JSON found in response');
       }
-
       return JSON.parse(jsonMatch[0]);
     } catch (error) {
       throw new Error(`Invalid JSON response from Gemini API: ${error.message}`);
