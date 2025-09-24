@@ -10,7 +10,8 @@ import {
     HttpStatus,
     HttpCode,
     ParseIntPipe,
-    DefaultValuePipe
+    DefaultValuePipe,
+    UseGuards
 } from '@nestjs/common';
 import { 
     ApiTags, 
@@ -23,16 +24,38 @@ import {
     ApiOkResponse,
     ApiNotFoundResponse,
     ApiConflictResponse,
-    ApiBadRequestResponse
+    ApiBadRequestResponse,
+    ApiBearerAuth
 } from '@nestjs/swagger';
 import { UsersService } from '../service/users.service';
 import { UserRequestDTO } from '../dto/user-request.dto';
 import { UserResponseDTO } from '../dto/user-response.dto';
+import { JwtAuthGuard } from '../../auth/guard/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guard/roles.guard';
+import { Roles } from '../../auth/decorator/roles.decorator';
+import { CurrentUser } from '../../auth/decorator/current-user.decorator';
+import { Role } from '../enum/role.enum';
+import type { JwtPayloadDto } from '../../auth/dto/jwt-payload.dto';
 
 @ApiTags('Users')
 @Controller('users')
+@UseGuards(JwtAuthGuard) // Proteger todas las rutas con JWT
+@ApiBearerAuth() // Documentar que se requiere autenticación
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
+
+    @Get('me')
+    @ApiOperation({ 
+        summary: 'Get current user profile',
+        description: 'Returns the profile information of the currently authenticated user.'
+    })
+    @ApiOkResponse({ 
+        type: UserResponseDTO,
+        description: 'Current user profile retrieved successfully'
+    })
+    async getCurrentUser(@CurrentUser() user: JwtPayloadDto): Promise<UserResponseDTO> {
+        return this.usersService.getById(user.sub);
+    }
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
@@ -220,9 +243,11 @@ export class UsersController {
 
     @Delete(':id')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(RolesGuard)
+    @Roles(Role.ADMIN) // Solo administradores pueden eliminar usuarios
     @ApiOperation({ 
         summary: 'Delete user',
-        description: 'Permanently deletes a user from the system.'
+        description: 'Permanently deletes a user from the system. Only administrators can perform this action.'
     })
     @ApiParam({ 
         name: 'id', 
