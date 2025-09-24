@@ -9,6 +9,7 @@ import {
   Delete,
   Param,
   Query,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,11 +19,13 @@ import {
   ApiBadRequestResponse,
   ApiInternalServerErrorResponse,
   ApiQuery,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { ExerciseGeneratorService } from '../service/exercise-generator.service';
 import { ExerciseRequestDTO } from '../dto/exercise-request.dto';
 import { ExerciseResponseDto } from '../dto/exercise-response.dto';
 import { ExerciseByIdRequestDTO } from '../dto/exercise-by-id-request.dto';
+import { ExerciseUpdateRequestDTO } from '../dto/exercise-update-request.dto';
 
 @ApiTags('Exercise Generator')
 @Controller('exercise-generator')
@@ -42,6 +45,7 @@ export class ExerciseGeneratorController {
       - **Quiz**: Multiple choice questions with explanations
       - **Hangman**: Words to guess with hints
       - **Fill in the blank**: Sentences with blank spaces to complete using multiple choice options
+      - **Flip cards**: Cards with front and back sides to flip and learn
       
       **Features:**
       - AI-generated educational content
@@ -63,7 +67,7 @@ export class ExerciseGeneratorController {
           gameType: 'quiz',
           difficulty: 'beginner',
           targetAudience: 'high school students',
-          numberOfItems: 5,
+          numberOfItems: 3,
         },
       },
       intermediate_hangman: {
@@ -75,8 +79,6 @@ export class ExerciseGeneratorController {
           gameType: 'hangman',
           difficulty: 'intermediate',
           targetAudience: 'university students',
-          additionalInstructions:
-            'Focus on fundamental terms like variables, functions, algorithms',
         },
       },
       advanced_fill_blank: {
@@ -88,8 +90,19 @@ export class ExerciseGeneratorController {
           gameType: 'fill_in_the_blank',
           difficulty: 'advanced',
           targetAudience: 'university students',
-          numberOfItems: 8,
-          additionalInstructions: 'Include important dates and key figures',
+          numberOfItems: 3,
+        },
+      },
+      flip_cards_programming: {
+        summary: 'Flip cards - Programming concepts',
+        description: 'Interactive flip cards for learning programming concepts',
+        value: {
+          userId: '507f1f77bcf86cd799439014',
+          topic: 'Python Programming Basics',
+          gameType: 'flip_cards',
+          difficulty: 'beginner',
+          targetAudience: 'programming students',
+          numberOfItems: 3,
         },
       },
     },
@@ -147,6 +160,26 @@ export class ExerciseGeneratorController {
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
           },
+          flip_cards_example: {
+            summary: 'Flip Cards Response',
+            value: {
+              id: 'ex_flip456cards',
+              game: 'flip_cards',
+              cards: [
+                {
+                  front: '¿Qué es Python?',
+                  back: 'Es un lenguaje de programación interpretado, de alto nivel y con tipado dinámico.',
+                },
+                {
+                  front: 'print()',
+                  back: 'Función integrada de Python que se utiliza para mostrar información en pantalla.',
+                },
+              ],
+              instructions: 'Da la vuelta a cada tarjeta para aprender o repasar conceptos clave de Python.',
+              createdAt: '2024-01-15T10:30:00.000Z',
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
+          },
         },
       },
     },
@@ -165,6 +198,23 @@ export class ExerciseGeneratorController {
                 'Game type must be one of: quiz, hangman, fill_in_the_blank',
               ],
               error: 'Bad Request',
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - Only teachers can create exercises',
+    content: {
+      'application/json': {
+        examples: {
+          role_error: {
+            summary: 'Role Access Error',
+            value: {
+              statusCode: 403,
+              message: 'Only teachers can perform this action',
+              error: 'Forbidden',
             },
           },
         },
@@ -201,6 +251,18 @@ export class ExerciseGeneratorController {
     try {
       return await this.exerciseGeneratorService.generateExercise(request, request.userId,);
     } catch (error) {
+      if (error.message === 'Only teachers can perform this action' || error.name === 'ForbiddenException') {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.FORBIDDEN,
+            message: 'Only teachers can create exercises',
+            error: 'Forbidden',
+            timestamp: new Date().toISOString(),
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      
       throw new HttpException(
         {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -248,6 +310,11 @@ export class ExerciseGeneratorController {
         })),
         word: exercise.word,
         hint: exercise.hint,
+        cards: exercise.cards?.map((c) => ({
+          front: c.front,
+          back: c.back,
+        })),
+        instructions: exercise.instructions,
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       }));
@@ -304,6 +371,11 @@ export class ExerciseGeneratorController {
         })),
         word: exercise.word,
         hint: exercise.hint,
+        cards: exercise.cards?.map((c) => ({
+          front: c.front,
+          back: c.back,
+        })),
+        instructions: exercise.instructions,
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       };
@@ -323,7 +395,7 @@ export class ExerciseGeneratorController {
   @HttpCode(204)
   @ApiOperation({
     summary: 'Delete exercise',
-    description: 'Delete a specific exercise by its ID',
+    description: 'Delete a specific exercise by its ID (Teachers only)',
   })
   @ApiBody({
     type: ExerciseByIdRequestDTO,
@@ -332,6 +404,9 @@ export class ExerciseGeneratorController {
   @ApiResponse({
     status: 204,
     description: 'Exercise deleted successfully',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - Only teachers can delete exercises',
   })
   async deleteExercise(@Body() request: ExerciseByIdRequestDTO): Promise<void> {
     try {
@@ -351,6 +426,16 @@ export class ExerciseGeneratorController {
         );
       }
     } catch (error) {
+      if (error.message === 'Only teachers can perform this action' || error.name === 'ForbiddenException') {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.FORBIDDEN,
+            message: 'Only teachers can delete exercises',
+            error: 'Forbidden',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
       if (error instanceof HttpException) {
         throw error;
       }
@@ -364,4 +449,159 @@ export class ExerciseGeneratorController {
       );
     }
   }
+
+  @Put('exercise')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Update exercise',
+    description: 'Update an AI-generated exercise (Teachers only)',
+  })
+  @ApiBody({
+    type: ExerciseUpdateRequestDTO,
+    description: 'Exercise update data',
+    examples: {
+      quiz_update: {
+        summary: 'Update Quiz Exercise',
+        description: 'Example of updating a quiz exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439014',
+          userId: '507f1f77bcf86cd799439011',
+          questions: [
+            {
+              question: 'What is the updated capital of France?',
+              options: ['Madrid', 'Paris', 'Rome', 'Berlin'],
+              correct_answer: 'Paris',
+              explanation: 'Paris has been the capital of France since the 10th century.'
+            }
+          ],
+          topic: 'Updated European Geography',
+          difficulty: 'intermediate'
+        },
+      },
+      hangman_update: {
+        summary: 'Update Hangman Exercise',
+        description: 'Example of updating a hangman exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439015',
+          userId: '507f1f77bcf86cd799439011',
+          word: 'algorithm',
+          hint: 'A step-by-step procedure for solving a problem',
+          topic: 'Computer Science Fundamentals'
+        },
+      },
+      fill_blank_update: {
+        summary: 'Update Fill-in-the-Blank Exercise',
+        description: 'Example of updating a fill-in-the-blank exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439016',
+          userId: '507f1f77bcf86cd799439011',
+          questions: [
+            {
+              sentence: 'The capital of France is ____.',
+              options: ['Madrid', 'Paris', 'Rome', 'Berlin'],
+              correct_answer: 'Paris',
+              explanation: 'Paris is the capital and most populous city of France since the 10th century.'
+            },
+            {
+              sentence: 'The Industrial Revolution began in ____.',
+              options: ['France', 'Germany', 'England', 'Spain'],
+              correct_answer: 'England',
+              explanation: 'The Industrial Revolution started in England in the late 18th century.'
+            }
+          ],
+          topic: 'Updated European History',
+          difficulty: 'intermediate'
+        },
+      },
+      flip_cards_update: {
+        summary: 'Update Flip Cards Exercise',
+        description: 'Example of updating a flip cards exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439017',
+          userId: '507f1f77bcf86cd799439011',
+          cards: [
+            {
+              front: '¿Qué es Python? (ACTUALIZADA)',
+              back: 'Es un lenguaje de programación interpretado, de alto nivel y con tipado dinámico que se caracteriza por su sintaxis clara y legible.'
+            },
+            {
+              front: 'print()',
+              back: 'Función integrada de Python que se utiliza para mostrar información en pantalla.'
+            },
+            {
+              front: 'Variables en Python (NUEVA TARJETA)',
+              back: 'Contenedores que almacenan valores de datos y pueden cambiar durante la ejecución del programa.'
+            }
+          ],
+          instructions: 'Da la vuelta a cada tarjeta para aprender conceptos fundamentales de Python. (INSTRUCCIONES ACTUALIZADAS)',
+          topic: 'Python Programming - Conceptos Básicos Actualizados'
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Exercise updated successfully',
+    type: ExerciseResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: 'Access denied - Only teachers can update exercises',
+    content: {
+      'application/json': {
+        examples: {
+          role_error: {
+            summary: 'Role Access Error',
+            value: {
+              statusCode: 403,
+              message: 'Only teachers can perform this action',
+              error: 'Forbidden',
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid request parameters',
+  })
+  async updateExercise(@Body() request: ExerciseUpdateRequestDTO): Promise<ExerciseResponseDto> {
+    try {
+      return await this.exerciseGeneratorService.updateExercise(request);
+    } catch (error) {
+      if (error.message === 'Only teachers can perform this action' || error.name === 'ForbiddenException') {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.FORBIDDEN,
+            message: 'Only teachers can update exercises',
+            error: 'Forbidden',
+            timestamp: new Date().toISOString(),
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      
+      if (error.message === 'Exercise not found or access denied' || error.name === 'NotFoundException') {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'Exercise not found or access denied',
+            error: 'Not Found',
+            timestamp: new Date().toISOString(),
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: `Error updating exercise: ${error.message}`,
+          error: 'Internal Server Error',
+          timestamp: new Date().toISOString(),
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
 }

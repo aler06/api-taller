@@ -1,6 +1,7 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { Game } from '../enum/game.enum';
 import { QuestionResponseDto } from './question-response.dto';
+import { CardResponseDto } from './card-response.dto';
 
 @ApiSchema({ name: 'ExerciseResponseDTO', description: 'Exercise response DTO' })
 export class ExerciseResponseDto {
@@ -49,4 +50,18 @@ export class ExerciseResponseDto {
         example: '2024-01-15T10:30:00.000Z'
     })
     updatedAt: Date;
+
+    @ApiProperty({
+        description: 'Cards for flip cards game',
+        type: [CardResponseDto],
+        required: false
+    })
+    cards?: CardResponseDto[];
+
+    @ApiProperty({
+        description: 'Instructions for the exercise',
+        example: 'Da la vuelta a cada tarjeta para aprender o repasar conceptos clave.',
+        required: false
+    })
+    instructions?: string;
 }

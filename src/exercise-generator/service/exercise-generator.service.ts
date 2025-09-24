@@ -1,13 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ExerciseRequestDTO } from '../dto/exercise-request.dto';
 import { ExerciseResponseDto } from '../dto/exercise-response.dto';
+import { ExerciseUpdateRequestDTO } from '../dto/exercise-update-request.dto';
 import { Game } from '../enum/game.enum';
 import { GeminiResponseMapper } from '../mapper';
 import { Exercise, ExerciseDocument } from '../model/exercise.model';
+import { UsersService } from '../../users/service/users.service';
+import { Role } from '../../users/enum/role.enum';
 
 @Injectable()
 export class ExerciseGeneratorService {
@@ -17,6 +20,7 @@ export class ExerciseGeneratorService {
   constructor(
     private readonly configService: ConfigService,
     @InjectModel(Exercise.name) private exerciseModel: Model<ExerciseDocument>,
+    private readonly usersService: UsersService,
   ) {
     const apiKey = this.configService.get<string>('GEMINI_KEY');
     if (!apiKey) {
@@ -27,6 +31,9 @@ export class ExerciseGeneratorService {
 
   async generateExercise(request: ExerciseRequestDTO, userId: string,): Promise<ExerciseResponseDto> {
     try {
+      // Validate that the user is a teacher
+      await this.validateTeacherRole(userId);
+      
       this.logger.log(
         `Generating ${request.gameType} exercise for topic: ${request.topic} by user: ${userId}`,
       );
@@ -57,6 +64,11 @@ export class ExerciseGeneratorService {
         })),
         word: exerciseDto.word,
         hint: exerciseDto.hint,
+        cards: exerciseDto.cards?.map(c => ({
+          front: c.front,
+          back: c.back,
+        })),
+        instructions: exerciseDto.instructions,
         topic: request.topic,
         difficulty: request.difficulty,
         targetAudience: request.targetAudience,
@@ -145,6 +157,24 @@ Ejemplo de schema para llenar espacios en blanco:
   ]
 }`;
         break;
+      case Game.FLIP_CARDS:
+        gameInstructions = `
+Ejemplo de schema para tarjetas volteables:
+{
+  "juego": "flip_cards",
+  "tarjetas": [
+    {
+      "anverso": "¿Qué es Python?",
+      "reverso": "Es un lenguaje de programación interpretado, de alto nivel y con tipado dinámico."
+    },
+    {
+      "anverso": "print()",
+      "reverso": "Función integrada de Python que se utiliza para mostrar información en pantalla."
+    }
+  ],
+  "instrucciones": "Da la vuelta a cada tarjeta para aprender o repasar conceptos clave."
+}`;
+        break;
     }
 
     return `El usuario te pedirá que elabores una sesión educativa sobre un tema específico.
@@ -194,6 +224,9 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
 
   async deleteExercise(exerciseId: string, userId: string): Promise<boolean> {
     try {
+      // Validate that the user is a teacher
+      await this.validateTeacherRole(userId);
+      
       this.logger.log(`Deleting exercise: ${exerciseId} for user: ${userId}`);
       
       const result = await this.exerciseModel
@@ -204,6 +237,125 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
     } catch (error) {
       this.logger.error('Error deleting exercise:', error);
       throw new Error(`Failed to delete exercise: ${error.message}`);
+    }
+  }
+
+  async updateExercise(request: ExerciseUpdateRequestDTO): Promise<ExerciseResponseDto> {
+    try {
+      // Validate that the user is a teacher
+      await this.validateTeacherRole(request.userId);
+      
+      this.logger.log(`Updating exercise: ${request.exerciseId} by user: ${request.userId}`);
+      
+      // Find the exercise to ensure it exists and belongs to the user
+      const existingExercise = await this.exerciseModel
+        .findOne({ _id: request.exerciseId, userId: request.userId })
+        .exec();
+
+      if (!existingExercise) {
+        throw new NotFoundException('Exercise not found or access denied');
+      }
+
+      // Prepare update data
+      const updateData: Partial<Exercise> = {};
+      
+      if (request.questions !== undefined) {
+        updateData.questions = request.questions.map(q => ({
+          question: q.question,
+          sentence: q.sentence,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+        }));
+      }
+      
+      if (request.word !== undefined) {
+        updateData.word = request.word;
+      }
+      
+      if (request.hint !== undefined) {
+        updateData.hint = request.hint;
+      }
+      
+      if (request.topic !== undefined) {
+        updateData.topic = request.topic;
+      }
+      
+      if (request.difficulty !== undefined) {
+        updateData.difficulty = request.difficulty;
+      }
+      
+      if (request.targetAudience !== undefined) {
+        updateData.targetAudience = request.targetAudience;
+      }
+
+      if (request.cards !== undefined) {
+        updateData.cards = request.cards.map(c => ({
+          front: c.front,
+          back: c.back,
+        }));
+      }
+
+      if (request.instructions !== undefined) {
+        updateData.instructions = request.instructions;
+      }
+
+      // Update the exercise
+      const updatedExercise = await this.exerciseModel
+        .findByIdAndUpdate(request.exerciseId, updateData, { new: true })
+        .exec();
+
+      if (!updatedExercise) {
+        throw new NotFoundException('Exercise not found');
+      }
+
+      // Convert to response DTO
+      const responseDto: ExerciseResponseDto = {
+        id: updatedExercise._id.toString(),
+        game: updatedExercise.game,
+        questions: updatedExercise.questions?.map((q) => ({
+          question: q.question,
+          sentence: q.sentence,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+        })),
+        word: updatedExercise.word,
+        hint: updatedExercise.hint,
+        cards: updatedExercise.cards?.map((c) => ({
+          front: c.front,
+          back: c.back,
+        })),
+        instructions: updatedExercise.instructions,
+        createdAt: updatedExercise.createdAt,
+        updatedAt: updatedExercise.updatedAt,
+      };
+
+      this.logger.log(`Exercise updated successfully: ${request.exerciseId}`);
+      
+      return responseDto;
+    } catch (error) {
+      this.logger.error('Error updating exercise:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new Error(`Failed to update exercise: ${error.message}`);
+    }
+  }
+
+
+  private async validateTeacherRole(userId: string): Promise<void> {
+    try {
+      const user = await this.usersService.getById(userId);
+      
+      if (user.role !== Role.TEACHER) {
+        throw new ForbiddenException('Only teachers can perform this action');
+      }
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new ForbiddenException('Invalid user or insufficient permissions');
     }
   }
 

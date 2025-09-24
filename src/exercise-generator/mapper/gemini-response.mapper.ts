@@ -1,5 +1,6 @@
 import { ExerciseResponseDto } from '../dto/exercise-response.dto';
 import { QuestionResponseDto } from '../dto/question-response.dto';
+import { CardResponseDto } from '../dto/card-response.dto';
 import { Game } from '../enum/game.enum';
 
 export interface GeminiQuizResponse {
@@ -28,10 +29,20 @@ export interface GeminiFillInTheBlankResponse {
   }>;
 }
 
+export interface GeminiFlipCardsResponse {
+  juego: string;
+  tarjetas: Array<{
+    anverso: string;
+    reverso: string;
+  }>;
+  instrucciones: string;
+}
+
 export type GeminiResponse =
   | GeminiQuizResponse
   | GeminiHangmanResponse
-  | GeminiFillInTheBlankResponse;
+  | GeminiFillInTheBlankResponse
+  | GeminiFlipCardsResponse;
 
 export class GeminiResponseMapper {
   static mapToExerciseResponseDto(geminiResponse: GeminiResponse, gameType: Game,): ExerciseResponseDto {
@@ -52,6 +63,9 @@ export class GeminiResponseMapper {
       case Game.FILL_IN_THE_BLANK:
         return this.mapFillInTheBlankResponse(exercise,geminiResponse as GeminiFillInTheBlankResponse,
         );
+
+      case Game.FLIP_CARDS:
+        return this.mapFlipCardsResponse(exercise, geminiResponse as GeminiFlipCardsResponse);
 
       default:
         throw new Error(`Unsupported game type: ${gameType}`);
@@ -85,6 +99,18 @@ export class GeminiResponseMapper {
         correct_answer: pregunta.respuesta_correcta,
         explanation: pregunta.explicacion,
       })) || [];
+
+    return exercise;
+  }
+
+  private static mapFlipCardsResponse(exercise: ExerciseResponseDto, flipCardsResponse: GeminiFlipCardsResponse,): ExerciseResponseDto {
+    exercise.cards =
+      flipCardsResponse.tarjetas?.map((tarjeta): CardResponseDto => ({
+        front: tarjeta.anverso,
+        back: tarjeta.reverso,
+      })) || [];
+
+    exercise.instructions = flipCardsResponse.instrucciones;
 
     return exercise;
   }

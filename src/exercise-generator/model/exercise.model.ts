@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Question } from './question.model';
+import { Card } from './card.model';
 import { Game } from '../enum/game.enum';
 
 export type ExerciseDocument = Exercise & Document & {
@@ -34,6 +35,12 @@ export class Exercise {
 
     @Prop({ required: false })
     targetAudience?: string;
+
+    @Prop({ type: [Card], required: false })
+    cards?: Card[];
+
+    @Prop({ required: false })
+    instructions?: string;
 }
 
 export const ExerciseSchema = SchemaFactory.createForClass(Exercise);
