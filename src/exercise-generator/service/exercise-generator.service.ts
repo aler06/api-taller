@@ -70,6 +70,7 @@ export class ExerciseGeneratorService {
         topic: request.topic,
         difficulty: request.difficulty,
         targetAudience: request.targetAudience,
+        published: false,
       });
 
       const savedExercise = await exercise.save();
@@ -78,6 +79,7 @@ export class ExerciseGeneratorService {
       exerciseDto.id = savedExercise._id.toString();
       exerciseDto.createdAt = savedExercise.createdAt;
       exerciseDto.updatedAt = savedExercise.updatedAt;
+      exerciseDto.published = savedExercise.published;
 
       this.logger.log(`Exercise saved with ID: ${exerciseDto.id}`);
       
@@ -321,6 +323,7 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
           back: c.back,
         })),
         instructions: updatedExercise.instructions,
+        published: updatedExercise.published,
         createdAt: updatedExercise.createdAt,
         updatedAt: updatedExercise.updatedAt,
       };
@@ -334,6 +337,63 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         throw error;
       }
       throw new Error(`Failed to update exercise: ${error.message}`);
+    }
+  }
+
+  async publishExercise(exerciseId: string): Promise<ExerciseResponseDto> {
+    try {
+      this.logger.log(`Publishing exercise: ${exerciseId}`);
+      
+      // Find the exercise to ensure it exists
+      const existingExercise = await this.exerciseModel
+        .findById(exerciseId)
+        .exec();
+
+      if (!existingExercise) {
+        throw new NotFoundException('Exercise not found');
+      }
+
+      // Update the published status
+      const updatedExercise = await this.exerciseModel
+        .findByIdAndUpdate(exerciseId, { published: true }, { new: true })
+        .exec();
+
+      if (!updatedExercise) {
+        throw new NotFoundException('Exercise not found');
+      }
+
+      // Convert to response DTO
+      const responseDto: ExerciseResponseDto = {
+        id: updatedExercise._id.toString(),
+        game: updatedExercise.game,
+        questions: updatedExercise.questions?.map((q) => ({
+          question: q.question,
+          sentence: q.sentence,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+        })),
+        word: updatedExercise.word,
+        hint: updatedExercise.hint,
+        cards: updatedExercise.cards?.map((c) => ({
+          front: c.front,
+          back: c.back,
+        })),
+        instructions: updatedExercise.instructions,
+        published: updatedExercise.published,
+        createdAt: updatedExercise.createdAt,
+        updatedAt: updatedExercise.updatedAt,
+      };
+
+      this.logger.log(`Exercise published successfully: ${exerciseId}`);
+      
+      return responseDto;
+    } catch (error) {
+      this.logger.error('Error publishing exercise:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new Error(`Failed to publish exercise: ${error.message}`);
     }
   }
 }

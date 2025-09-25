@@ -41,6 +41,9 @@ export class Exercise {
 
     @Prop({ required: false })
     instructions?: string;
+
+    @Prop({ required: false, default: false })
+    published?: boolean;
 }
 
 export const ExerciseSchema = SchemaFactory.createForClass(Exercise);

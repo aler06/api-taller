@@ -64,4 +64,11 @@ export class ExerciseResponseDto {
         required: false
     })
     instructions?: string;
+
+    @ApiProperty({
+        description: 'Whether the exercise is published',
+        example: true,
+        required: false
+    })
+    published?: boolean;
 }

@@ -80,4 +80,5 @@ export class ExerciseRequestDTO {
   })
   @IsOptional()
   numberOfItems?: number;
+
 }
