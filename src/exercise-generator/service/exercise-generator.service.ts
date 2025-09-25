@@ -31,8 +31,6 @@ export class ExerciseGeneratorService {
 
   async generateExercise(request: ExerciseRequestDTO, userId: string,): Promise<ExerciseResponseDto> {
     try {
-      // Validate that the user is a teacher
-      await this.validateTeacherRole(userId);
       
       this.logger.log(
         `Generating ${request.gameType} exercise for topic: ${request.topic} by user: ${userId}`,
@@ -72,6 +70,7 @@ export class ExerciseGeneratorService {
         topic: request.topic,
         difficulty: request.difficulty,
         targetAudience: request.targetAudience,
+        published: false,
       });
 
       const savedExercise = await exercise.save();
@@ -80,6 +79,7 @@ export class ExerciseGeneratorService {
       exerciseDto.id = savedExercise._id.toString();
       exerciseDto.createdAt = savedExercise.createdAt;
       exerciseDto.updatedAt = savedExercise.updatedAt;
+      exerciseDto.published = savedExercise.published;
 
       this.logger.log(`Exercise saved with ID: ${exerciseDto.id}`);
       
@@ -224,8 +224,6 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
 
   async deleteExercise(exerciseId: string, userId: string): Promise<boolean> {
     try {
-      // Validate that the user is a teacher
-      await this.validateTeacherRole(userId);
       
       this.logger.log(`Deleting exercise: ${exerciseId} for user: ${userId}`);
       
@@ -242,9 +240,7 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
 
   async updateExercise(request: ExerciseUpdateRequestDTO): Promise<ExerciseResponseDto> {
     try {
-      // Validate that the user is a teacher
-      await this.validateTeacherRole(request.userId);
-      
+            
       this.logger.log(`Updating exercise: ${request.exerciseId} by user: ${request.userId}`);
       
       // Find the exercise to ensure it exists and belongs to the user
@@ -327,6 +323,7 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
           back: c.back,
         })),
         instructions: updatedExercise.instructions,
+        published: updatedExercise.published,
         createdAt: updatedExercise.createdAt,
         updatedAt: updatedExercise.updatedAt,
       };
@@ -343,20 +340,60 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
     }
   }
 
-
-  private async validateTeacherRole(userId: string): Promise<void> {
+  async publishExercise(exerciseId: string): Promise<ExerciseResponseDto> {
     try {
-      const user = await this.usersService.getById(userId);
+      this.logger.log(`Publishing exercise: ${exerciseId}`);
       
-      if (user.role !== Role.TEACHER) {
-        throw new ForbiddenException('Only teachers can perform this action');
+      // Find the exercise to ensure it exists
+      const existingExercise = await this.exerciseModel
+        .findById(exerciseId)
+        .exec();
+
+      if (!existingExercise) {
+        throw new NotFoundException('Exercise not found');
       }
+
+      // Update the published status
+      const updatedExercise = await this.exerciseModel
+        .findByIdAndUpdate(exerciseId, { published: true }, { new: true })
+        .exec();
+
+      if (!updatedExercise) {
+        throw new NotFoundException('Exercise not found');
+      }
+
+      // Convert to response DTO
+      const responseDto: ExerciseResponseDto = {
+        id: updatedExercise._id.toString(),
+        game: updatedExercise.game,
+        questions: updatedExercise.questions?.map((q) => ({
+          question: q.question,
+          sentence: q.sentence,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          explanation: q.explanation,
+        })),
+        word: updatedExercise.word,
+        hint: updatedExercise.hint,
+        cards: updatedExercise.cards?.map((c) => ({
+          front: c.front,
+          back: c.back,
+        })),
+        instructions: updatedExercise.instructions,
+        published: updatedExercise.published,
+        createdAt: updatedExercise.createdAt,
+        updatedAt: updatedExercise.updatedAt,
+      };
+
+      this.logger.log(`Exercise published successfully: ${exerciseId}`);
+      
+      return responseDto;
     } catch (error) {
-      if (error instanceof ForbiddenException) {
+      this.logger.error('Error publishing exercise:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
         throw error;
       }
-      throw new ForbiddenException('Invalid user or insufficient permissions');
+      throw new Error(`Failed to publish exercise: ${error.message}`);
     }
   }
-
 }

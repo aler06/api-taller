@@ -51,6 +51,7 @@ export class GeminiResponseMapper {
       game: gameType,
       createdAt: new Date(),
       updatedAt: new Date(),
+      published: false,
     };
 
     switch (gameType) {

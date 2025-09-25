@@ -18,6 +18,18 @@ async function bootstrap() {
       'Aplicación Web que usa un LLM para la Creación de Ejercicios Interactivos ',
     )
     .setVersion('0.0.1')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+        name: 'Authorization',
+        description: 'Token JWT para autenticación',
+      },
+      'bearer',
+    )
+    .addSecurityRequirements('bearer')
     .build();
   const documentFactory = SwaggerModule.createDocument(app, openapiconfig);
   SwaggerModule.setup(`${apiPrefix}/docs`, app, documentFactory);
