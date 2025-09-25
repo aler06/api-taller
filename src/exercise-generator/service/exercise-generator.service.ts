@@ -31,8 +31,6 @@ export class ExerciseGeneratorService {
 
   async generateExercise(request: ExerciseRequestDTO, userId: string,): Promise<ExerciseResponseDto> {
     try {
-      // Validate that the user is a teacher
-      await this.validateTeacherRole(userId);
       
       this.logger.log(
         `Generating ${request.gameType} exercise for topic: ${request.topic} by user: ${userId}`,
@@ -224,8 +222,6 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
 
   async deleteExercise(exerciseId: string, userId: string): Promise<boolean> {
     try {
-      // Validate that the user is a teacher
-      await this.validateTeacherRole(userId);
       
       this.logger.log(`Deleting exercise: ${exerciseId} for user: ${userId}`);
       
@@ -242,9 +238,7 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
 
   async updateExercise(request: ExerciseUpdateRequestDTO): Promise<ExerciseResponseDto> {
     try {
-      // Validate that the user is a teacher
-      await this.validateTeacherRole(request.userId);
-      
+            
       this.logger.log(`Updating exercise: ${request.exerciseId} by user: ${request.userId}`);
       
       // Find the exercise to ensure it exists and belongs to the user
@@ -342,21 +336,4 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
       throw new Error(`Failed to update exercise: ${error.message}`);
     }
   }
-
-
-  private async validateTeacherRole(userId: string): Promise<void> {
-    try {
-      const user = await this.usersService.getById(userId);
-      
-      if (user.role !== Role.TEACHER) {
-        throw new ForbiddenException('Only teachers can perform this action');
-      }
-    } catch (error) {
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new ForbiddenException('Invalid user or insufficient permissions');
-    }
-  }
-
 }
