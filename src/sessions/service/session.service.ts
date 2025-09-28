@@ -272,8 +272,36 @@ export class SessionService {
     return session;
   }
 
+  async findSessionByAccessCode(accessCode: string): Promise<any> {
+    const session = await this.sessionModel
+      .findOne({ accessCode })
+      .populate('teacherId')
+      .populate('exerciseId')
+      .populate('participants');
+    
+    return session;
+  }
+
+  async findActiveSessionByAccessCode(accessCode: string): Promise<any> {
+    const session = await this.sessionModel
+      .findOne({ 
+        accessCode,
+        status: { $in: [SessionStatus.WAITING, SessionStatus.ACTIVE] }
+      })
+      .populate('teacherId')
+      .populate('exerciseId')
+      .populate('participants');
+    
+    return session;
+  }
+
   async getUserById(userId: string): Promise<any> {
     return this.userModel.findById(userId).select('firstName lastName email role isActive createdAt updatedAt');
+  }
+
+  async getTestUsers(): Promise<any[]> {
+    // For development/testing only - get a few users
+    return this.userModel.find().select('firstName lastName email role isActive createdAt updatedAt').limit(10);
   }
 
   // Method to process answers (placeholder - would need more complex logic)
@@ -328,7 +356,7 @@ export class SessionService {
     return result;
   }
 
-  private mapToSessionResponse(session: any, teacher: any, exercise: any): SessionResponseDTO {
+  public mapToSessionResponse(session: any, teacher: any, exercise: any): SessionResponseDTO {
     return {
       id: session._id.toString(),
       teacher: {

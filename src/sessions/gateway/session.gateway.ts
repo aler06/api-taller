@@ -22,7 +22,16 @@ interface ConnectedUser {
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://localhost:8080',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:8080'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true,
   },
   namespace: '/sessions',
 })
@@ -69,41 +78,77 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
     try {
       const { sessionId, userId, accessCode } = data;
       
-      // Validate session and user
-      const session = await this.sessionService.validateSessionAccess(sessionId, accessCode);
-      const user = await this.sessionService.getUserById(userId);
+      this.logger.log(`🔍 Received joinSession: ${JSON.stringify(data)}`);
       
-      if (!session || !user) {
-        client.emit('joinError', { message: 'Invalid session or user' });
+      // Validate session exists and is active
+      const session = await this.sessionService.findSessionByAccessCode(accessCode);
+      if (!session) {
+        this.logger.error(`❌ Session not found with access code: ${accessCode}`);
+        client.emit('joinError', { message: 'Session not found' });
         return;
       }
 
+      this.logger.log(`✅ Session found: ${session._id}, status: ${session.status}`);
+      
+      // Handle temporary vs registered users
+      let user;
+      if (userId.startsWith('temp_')) {
+        // Create temporary user object
+        user = {
+          _id: userId,
+          firstName: 'Estudiante',
+          lastName: 'Temporal',
+          email: `${userId}@temp.local`,
+          role: Role.STUDENT,
+          isActive: true,
+          isTemporary: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        this.logger.log(`👤 Created temporary user: ${userId}`);
+      } else {
+        // Get registered user from database
+        user = await this.sessionService.getUserById(userId);
+        if (!user) {
+          this.logger.error(`❌ Registered user not found: ${userId}`);
+          client.emit('joinError', { message: 'User not found' });
+          return;
+        }
+        this.logger.log(`👤 Found registered user: ${userId}`);
+      }
+
+      // Use the actual session ID from the database
+      const actualSessionId = session._id.toString();
+      
       // Join the session room
-      await client.join(`session-${sessionId}`);
+      await client.join(`session-${actualSessionId}`);
       
       // Store connected user info
       const connectedUser: ConnectedUser = {
         userId,
-        sessionId,
+        sessionId: actualSessionId,
         role: user.role === Role.TEACHER ? 'teacher' : 'student',
         socketId: client.id,
       };
       this.connectedUsers.set(userId, connectedUser);
 
-      // Add participant to session (if student)
-      if (user.role === Role.STUDENT) {
-        await this.sessionService.addParticipant(sessionId, userId);
+      // Add participant to session (if student and not temporary)
+      if (user.role === Role.STUDENT && !user.isTemporary) {
+        await this.sessionService.addParticipant(actualSessionId, userId);
+        this.logger.log(`📝 Added registered student to session participants`);
+      } else if (user.isTemporary) {
+        this.logger.log(`👻 Temporary user joined - not persisting to database`);
       }
 
       // Notify the user they joined successfully
       client.emit('sessionJoined', {
-        sessionId,
+        sessionId: actualSessionId,
         session,
         timestamp: new Date(),
       });
 
       // Notify other participants
-      client.to(`session-${sessionId}`).emit('userJoined', {
+      client.to(`session-${actualSessionId}`).emit('userJoined', {
         user: {
           id: user._id,
           firstName: user.firstName,
@@ -114,12 +159,16 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       });
 
       // Update participant count
-      this.updateParticipantCount(sessionId);
+      this.updateParticipantCount(actualSessionId);
 
-      this.logger.log(`User ${userId} joined session ${sessionId}`);
+      this.logger.log(`✅ User ${userId} joined session ${actualSessionId} successfully`);
     } catch (error) {
-      this.logger.error(`Error joining session: ${error.message}`);
-      client.emit('joinError', { message: 'Failed to join session' });
+      this.logger.error(`❌ Error joining session: ${error.message}`);
+      this.logger.error(`❌ Stack trace: ${error.stack}`);
+      client.emit('joinError', { 
+        message: error.message || 'Failed to join session',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   }
 
@@ -137,10 +186,15 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       // Remove from connected users
       this.connectedUsers.delete(userId);
       
-      // Remove participant from session (if student)
-      const user = await this.sessionService.getUserById(userId);
-      if (user && user.role === Role.STUDENT) {
-        await this.sessionService.removeParticipant(sessionId, userId);
+      // Remove participant from session (if student and not temporary)
+      if (userId.startsWith('temp_')) {
+        this.logger.log(`👻 Temporary user left - no database cleanup needed`);
+      } else {
+        const user = await this.sessionService.getUserById(userId);
+        if (user && user.role === Role.STUDENT) {
+          await this.sessionService.removeParticipant(sessionId, userId);
+          this.logger.log(`📝 Removed registered student from session participants`);
+        }
       }
 
       // Notify other participants

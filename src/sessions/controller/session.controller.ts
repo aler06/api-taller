@@ -294,10 +294,10 @@ export class SessionController {
     description: 'Session not found',
   })
   async getSessionByAccessCode(@Param('accessCode') accessCode: string): Promise<SessionResponseDTO> {
-    const session = await this.sessionService.validateSessionAccess('', accessCode);
+    const session = await this.sessionService.findSessionByAccessCode(accessCode);
     if (!session) {
       throw new Error('Session not found');
     }
-    return this.sessionService.getSessionById(session._id.toString());
+    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseId);
   }
 }
