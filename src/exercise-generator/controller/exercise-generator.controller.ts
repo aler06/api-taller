@@ -317,7 +317,6 @@ export class ExerciseGeneratorController {
           back: c.back,
         })),
         instructions: exercise.instructions,
-        published: exercise.published,
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       }));
@@ -379,7 +378,6 @@ export class ExerciseGeneratorController {
           back: c.back,
         })),
         instructions: exercise.instructions,
-        published: exercise.published,
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       };
@@ -608,97 +606,5 @@ export class ExerciseGeneratorController {
     }
   }
 
-  @Patch('exercise/:exerciseId/publish')
-  @HttpCode(200)
-  @ApiOperation({
-    summary: 'Publish exercise',
-    description: 'Publish an exercise to make it available publicly (Teachers only)',
-  })
-  @ApiParam({
-    name: 'exerciseId',
-    description: 'ID of the exercise to publish',
-    example: '507f1f77bcf86cd799439014',
-    required: true,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Exercise published successfully',
-    type: ExerciseResponseDto,
-  })
-  @ApiForbiddenResponse({
-    description: 'Access denied - Only teachers can publish exercises',
-    content: {
-      'application/json': {
-        examples: {
-          role_error: {
-            summary: 'Role Access Error',
-            value: {
-              statusCode: 403,
-              message: 'Only teachers can perform this action',
-              error: 'Forbidden',
-            },
-          },
-        },
-      },
-    },
-  })
-  @ApiBadRequestResponse({
-    description: 'Invalid request parameters or exercise not found',
-    content: {
-      'application/json': {
-        examples: {
-          not_found_error: {
-            summary: 'Exercise Not Found',
-            value: {
-              statusCode: 404,
-              message: 'Exercise not found',
-              error: 'Not Found',
-            },
-          },
-        },
-      },
-    },
-  })
-  async publishExercise(
-    @Param('exerciseId') exerciseId: string
-  ): Promise<ExerciseResponseDto> {
-    try {
-      return await this.exerciseGeneratorService.publishExercise(exerciseId);
-    } catch (error) {
-      if (error.message === 'Only teachers can perform this action' || error.name === 'ForbiddenException') {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.FORBIDDEN,
-            message: 'Only teachers can publish exercises',
-            error: 'Forbidden',
-            timestamp: new Date().toISOString(),
-          },
-          HttpStatus.FORBIDDEN,
-        );
-      }
-      
-      if (error.message === 'Exercise not found' || error.name === 'NotFoundException') {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.NOT_FOUND,
-            message: 'Exercise not found',
-            error: 'Not Found',
-            timestamp: new Date().toISOString(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: `Error publishing exercise: ${error.message}`,
-          error: 'Internal Server Error',
-          timestamp: new Date().toISOString(),
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
 
 }

@@ -298,6 +298,6 @@ export class SessionController {
     if (!session) {
       throw new Error('Session not found');
     }
-    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseId);
+    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
   }
 }

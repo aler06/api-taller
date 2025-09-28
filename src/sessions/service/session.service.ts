@@ -26,14 +26,18 @@ export class SessionService {
       throw new BadRequestException('Invalid teacher ID or user is not a teacher');
     }
 
-    // Validate exercise exists and is published
-    const exercise = await this.exerciseModel.findById(createSessionDto.exerciseId);
-    if (!exercise || !exercise.published) {
-      throw new BadRequestException('Exercise not found or not published');
+    // Validate exercises exist
+    const exercises = await this.exerciseModel.find({ 
+      _id: { $in: createSessionDto.exerciseIds }
+    });
+    
+    if (exercises.length !== createSessionDto.exerciseIds.length) {
+      throw new BadRequestException('One or more exercises not found');
     }
 
-    // Verify the exercise belongs to the teacher
-    if (exercise.userId.toString() !== createSessionDto.teacherId) {
+    // Verify all exercises belong to the teacher
+    const invalidExercises = exercises.filter(exercise => exercise.userId.toString() !== createSessionDto.teacherId);
+    if (invalidExercises.length > 0) {
       throw new ForbiddenException('You can only create sessions for your own exercises');
     }
 
@@ -45,7 +49,7 @@ export class SessionService {
 
     const sessionData = {
       teacherId: new Types.ObjectId(createSessionDto.teacherId),
-      exerciseId: new Types.ObjectId(createSessionDto.exerciseId),
+      exerciseIds: createSessionDto.exerciseIds.map(id => new Types.ObjectId(id)),
       name: createSessionDto.name,
       description: createSessionDto.description,
       accessCode,
@@ -61,7 +65,7 @@ export class SessionService {
     const session = new this.sessionModel(sessionData);
     const savedSession = await session.save();
 
-    return this.mapToSessionResponse(savedSession, teacher, exercise);
+    return this.mapToSessionResponse(savedSession, teacher, exercises);
   }
 
   async joinSession(joinSessionDto: JoinSessionRequestDTO): Promise<SessionResponseDTO> {
@@ -69,7 +73,7 @@ export class SessionService {
     const session = await this.sessionModel
       .findOne({ accessCode: joinSessionDto.accessCode })
       .populate('teacherId')
-      .populate('exerciseId')
+      .populate('exerciseIds')
       .populate('participants');
 
     if (!session) {
@@ -99,7 +103,7 @@ export class SessionService {
 
     if (isAlreadyParticipant) {
       // Return current session state if already joined
-      return this.mapToSessionResponse(session, session.teacherId, session.exerciseId);
+      return this.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
     }
 
     // Check if session is full
@@ -115,26 +119,26 @@ export class SessionService {
     const updatedSession = await this.sessionModel
       .findById(session._id)
       .populate('teacherId')
-      .populate('exerciseId')
+      .populate('exerciseIds')
       .populate('participants');
 
     if (!updatedSession) {
       throw new NotFoundException('Session not found after update');
     }
 
-    return this.mapToSessionResponse(updatedSession, updatedSession.teacherId, updatedSession.exerciseId);
+    return this.mapToSessionResponse(updatedSession, updatedSession.teacherId, updatedSession.exerciseIds);
   }
 
   async getSessionsByTeacher(teacherId: string): Promise<SessionResponseDTO[]> {
     const sessions = await this.sessionModel
       .find({ teacherId: new Types.ObjectId(teacherId) })
       .populate('teacherId')
-      .populate('exerciseId')
+      .populate('exerciseIds')
       .populate('participants')
       .sort({ createdAt: -1 });
 
     return sessions.map(session => 
-      this.mapToSessionResponse(session, session.teacherId, session.exerciseId)
+      this.mapToSessionResponse(session, session.teacherId, session.exerciseIds)
     );
   }
 
@@ -142,12 +146,12 @@ export class SessionService {
     const sessions = await this.sessionModel
       .find({ participants: new Types.ObjectId(studentId) })
       .populate('teacherId')
-      .populate('exerciseId')
+      .populate('exerciseIds')
       .populate('participants')
       .sort({ createdAt: -1 });
 
     return sessions.map(session => 
-      this.mapToSessionResponse(session, session.teacherId, session.exerciseId)
+      this.mapToSessionResponse(session, session.teacherId, session.exerciseIds)
     );
   }
 
@@ -155,14 +159,14 @@ export class SessionService {
     const session = await this.sessionModel
       .findById(sessionId)
       .populate('teacherId')
-      .populate('exerciseId')
+      .populate('exerciseIds')
       .populate('participants');
 
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
-    return this.mapToSessionResponse(session, session.teacherId, session.exerciseId);
+    return this.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
   }
 
   async startSession(sessionId: string, teacherId: string): Promise<SessionResponseDTO> {
@@ -267,7 +271,7 @@ export class SessionService {
   async validateSessionAccess(sessionId: string, accessCode: string): Promise<any> {
     const session = await this.sessionModel
       .findOne({ _id: sessionId, accessCode })
-      .populate('exerciseId');
+      .populate('exerciseIds');
     
     return session;
   }
@@ -276,7 +280,7 @@ export class SessionService {
     const session = await this.sessionModel
       .findOne({ accessCode })
       .populate('teacherId')
-      .populate('exerciseId')
+      .populate('exerciseIds')
       .populate('participants');
     
     return session;
@@ -289,7 +293,7 @@ export class SessionService {
         status: { $in: [SessionStatus.WAITING, SessionStatus.ACTIVE] }
       })
       .populate('teacherId')
-      .populate('exerciseId')
+      .populate('exerciseIds')
       .populate('participants');
     
     return session;
@@ -319,14 +323,19 @@ export class SessionService {
     // 3. Store the answer in a separate collection
     // 4. Update user progress/statistics
     
-    const session = await this.sessionModel.findById(sessionId).populate('exerciseId');
+    const session = await this.sessionModel.findById(sessionId).populate('exerciseIds');
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
-    // Find the question in the exercise
-    const exercise = session.exerciseId as any;
-    const question = exercise.questions?.find((q: any) => q._id.toString() === questionId);
+    // Find the question in any of the exercises
+    const exercises = session.exerciseIds as any[];
+    let question: any = null;
+    
+    for (const exercise of exercises) {
+      question = exercise.questions?.find((q: any) => q._id.toString() === questionId);
+      if (question) break;
+    }
     
     if (!question) {
       throw new NotFoundException('Question not found');
@@ -356,7 +365,7 @@ export class SessionService {
     return result;
   }
 
-  public mapToSessionResponse(session: any, teacher: any, exercise: any): SessionResponseDTO {
+  public mapToSessionResponse(session: any, teacher: any, exercises: any[]): SessionResponseDTO {
     return {
       id: session._id.toString(),
       teacher: {
@@ -369,7 +378,7 @@ export class SessionService {
         createdAt: teacher.createdAt,
         updatedAt: teacher.updatedAt,
       },
-      exercise: {
+      exercises: exercises.map((exercise: any) => ({
         id: exercise._id.toString(),
         game: exercise.game,
         questions: exercise.questions,
@@ -377,10 +386,9 @@ export class SessionService {
         hint: exercise.hint,
         cards: exercise.cards,
         instructions: exercise.instructions,
-        published: exercise.published,
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
-      },
+      })),
       name: session.name,
       description: session.description,
       accessCode: session.accessCode,
