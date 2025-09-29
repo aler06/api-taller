@@ -238,6 +238,24 @@ export class SessionService {
     return this.getSessionById(sessionId);
   }
 
+  async deleteSession(sessionId: string, teacherId: string): Promise<void> {
+    const session = await this.sessionModel.findById(sessionId);
+    
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (session.teacherId.toString() !== teacherId) {
+      throw new ForbiddenException('Only the session creator can delete the session');
+    }
+
+    if (session.status === SessionStatus.ACTIVE) {
+      throw new BadRequestException('Cannot delete an active session. Please end or cancel the session first');
+    }
+
+    await this.sessionModel.findByIdAndDelete(sessionId);
+  }
+
   async addParticipant(sessionId: string, studentId: string): Promise<void> {
     const session = await this.sessionModel.findById(sessionId);
     
