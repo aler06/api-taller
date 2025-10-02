@@ -274,6 +274,42 @@ export class SessionController {
     return this.sessionService.cancelSession(sessionId, user.sub);
   }
 
+  @Delete(':sessionId')
+  @UseGuards(RolesGuard)
+  @Roles(Role.TEACHER)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ 
+    summary: 'Delete a session',
+    description: 'Delete a session. Only the session creator can delete it. Cannot delete active sessions.' 
+  })
+  @ApiParam({
+    name: 'sessionId',
+    description: 'ID of the session to delete',
+    example: '507f1f77bcf86cd799439014',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Session deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Cannot delete an active session',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Only session creator can delete the session',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Session not found',
+  })
+  async deleteSession(
+    @Param('sessionId') sessionId: string,
+    @CurrentUser() user: any,
+  ): Promise<void> {
+    await this.sessionService.deleteSession(sessionId, user.sub);
+  }
+
   @Get('access-code/:accessCode')
   @ApiOperation({ 
     summary: 'Get session by access code',
@@ -298,6 +334,6 @@ export class SessionController {
     if (!session) {
       throw new Error('Session not found');
     }
-    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseId);
+    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
   }
 }

@@ -18,10 +18,10 @@ export class SessionResponseDTO {
   teacher: UserResponseDTO;
 
   @ApiProperty({
-    description: 'Exercise associated with the session',
-    type: () => ExerciseResponseDto
+    description: 'Exercises associated with the session',
+    type: [ExerciseResponseDto]
   })
-  exercise: ExerciseResponseDto;
+  exercises: ExerciseResponseDto[];
 
   @ApiProperty({
     description: 'Name of the session',

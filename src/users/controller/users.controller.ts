@@ -59,9 +59,11 @@ export class UsersController {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
+    @UseGuards(RolesGuard)
+    @Roles(Role.ADMIN)
     @ApiOperation({ 
         summary: 'Create a new user',
-        description: 'Creates a new user account with the provided information. The user will be created in inactive state by default.'
+        description: 'Creates a new user account with the provided information. Only administrators can create users. The user will be created in inactive state by default.'
     })
     @ApiBody({ 
         type: UserRequestDTO,
@@ -82,9 +84,11 @@ export class UsersController {
     }
 
     @Get()
+    @UseGuards(RolesGuard)
+    @Roles(Role.ADMIN)
     @ApiOperation({ 
         summary: 'Get all users',
-        description: 'Retrieves a list of all users in the system. Passwords are excluded from the response.'
+        description: 'Retrieves a list of all users in the system. Only administrators can access this endpoint. Passwords are excluded from the response.'
     })
     @ApiOkResponse({ 
         type: [UserResponseDTO],
@@ -98,9 +102,11 @@ export class UsersController {
     }
 
     @Get('search')
+    @UseGuards(RolesGuard)
+    @Roles(Role.ADMIN)
     @ApiOperation({ 
         summary: 'Search users',
-        description: 'Searches users by first name, last name, email, or role. Search is case-insensitive.'
+        description: 'Searches users by first name, last name, email, or role. Only administrators can access this endpoint. Search is case-insensitive.'
     })
     @ApiQuery({ 
         name: 'q', 
@@ -119,9 +125,11 @@ export class UsersController {
     }
 
     @Get('paginated')
+    @UseGuards(RolesGuard)
+    @Roles(Role.ADMIN)
     @ApiOperation({ 
         summary: 'Get paginated users',
-        description: 'Retrieves users with pagination support. Returns users with total count and pagination metadata.'
+        description: 'Retrieves users with pagination support. Only administrators can access this endpoint. Returns users with total count and pagination metadata.'
     })
     @ApiQuery({ 
         name: 'page', 

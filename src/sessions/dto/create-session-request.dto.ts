@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsMongoId, IsOptional, IsNumber, IsBoolean, Min, Max, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsMongoId, IsOptional, IsNumber, IsBoolean, Min, Max, MinLength, MaxLength, IsArray, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApiSchema } from '@nestjs/swagger';
 
@@ -15,14 +15,18 @@ export class CreateSessionRequestDTO {
   teacherId: string;
 
   @ApiProperty({
-    description: 'ID of the exercise to be used in the session',
-    example: '507f1f77bcf86cd799439012',
-    required: true
+    description: 'IDs of the exercises to be used in the session',
+    example: ['507f1f77bcf86cd799439012', '507f1f77bcf86cd799439013'],
+    type: [String],
+    required: true,
+    minItems: 1,
+    maxItems: 10
   })
-  @IsString()
-  @IsNotEmpty({ message: 'Exercise ID is required' })
-  @IsMongoId({ message: 'Exercise ID must be a valid MongoDB ObjectId' })
-  exerciseId: string;
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one exercise is required' })
+  @ArrayMaxSize(10, { message: 'Maximum 10 exercises allowed per session' })
+  @IsMongoId({ each: true, message: 'Each exercise ID must be a valid MongoDB ObjectId' })
+  exerciseIds: string[];
 
   @ApiProperty({
     description: 'Name of the session',

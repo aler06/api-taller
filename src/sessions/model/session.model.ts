@@ -19,8 +19,8 @@ export class Session {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   teacherId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Exercise', required: true })
-  exerciseId: Types.ObjectId;
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Exercise' }], required: true })
+  exerciseIds: Types.ObjectId[];
 
   @Prop({ required: true })
   name: string;

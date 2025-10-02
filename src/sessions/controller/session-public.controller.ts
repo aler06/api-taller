@@ -45,7 +45,7 @@ export class SessionPublicController {
     if (!session) {
       throw new NotFoundException('Session not found with the provided access code');
     }
-    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseId);
+    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
   }
 
   @Get('redirect/:accessCode')
