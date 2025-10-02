@@ -67,6 +67,12 @@ export class ExerciseGeneratorService {
           back: c.back,
         })),
         instructions: exerciseDto.instructions,
+        elements: exerciseDto.elements?.map(e => ({
+          id: e.id,
+          texto: e.texto,
+        })),
+        correctOrder: exerciseDto.correctOrder,
+        explanation: exerciseDto.explanation,
         topic: request.topic,
         difficulty: request.difficulty,
         targetAudience: request.targetAudience,
@@ -171,6 +177,36 @@ Ejemplo de schema para tarjetas volteables:
     }
   ],
   "instrucciones": "Da la vuelta a cada tarjeta para aprender o repasar conceptos clave."
+}`;
+        break;
+      case Game.DRAG_AND_DROP:
+        gameInstructions = `
+Ejemplo de schema para arrastrar y soltar:
+{
+  "juego": "drag_and_drop",
+  "tema": "Python - Flujo de un programa",
+  "dificultad": "básico",
+  "instrucciones": "Arrastra y suelta cada paso en el orden correcto para escribir y ejecutar un programa en Python.",
+  "elementos": [
+    {
+      "id": 1,
+      "texto": "Importar librerías necesarias"
+    },
+    {
+      "id": 2,
+      "texto": "Definir variables"
+    },
+    {
+      "id": 3,
+      "texto": "Escribir funciones"
+    },
+    {
+      "id": 4,
+      "texto": "Ejecutar el programa"
+    }
+  ],
+  "orden_correcto": [1, 2, 3, 4],
+  "explicacion": "El flujo lógico de un programa en Python comienza importando librerías, luego se definen variables, después se escriben las funciones y finalmente se ejecuta el programa."
 }`;
         break;
     }
@@ -294,6 +330,21 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         updateData.instructions = request.instructions;
       }
 
+      if (request.elements !== undefined) {
+        updateData.elements = request.elements.map(e => ({
+          id: e.id,
+          texto: e.texto,
+        }));
+      }
+
+      if (request.correctOrder !== undefined) {
+        updateData.correctOrder = request.correctOrder;
+      }
+
+      if (request.explanation !== undefined) {
+        updateData.explanation = request.explanation;
+      }
+
       // Update the exercise
       const updatedExercise = await this.exerciseModel
         .findByIdAndUpdate(request.exerciseId, updateData, { new: true })
@@ -321,6 +372,12 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
           back: c.back,
         })),
         instructions: updatedExercise.instructions,
+        elements: updatedExercise.elements?.map((e) => ({
+          id: e.id,
+          texto: e.texto,
+        })),
+        correctOrder: updatedExercise.correctOrder,
+        explanation: updatedExercise.explanation,
         createdAt: updatedExercise.createdAt,
         updatedAt: updatedExercise.updatedAt,
       };

@@ -48,6 +48,7 @@ export class ExerciseGeneratorController {
       - **Hangman**: Words to guess with hints
       - **Fill in the blank**: Sentences with blank spaces to complete using multiple choice options
       - **Flip cards**: Cards with front and back sides to flip and learn
+      - **Drag and drop**: Elements to drag and drop in the correct order
       
       **Features:**
       - AI-generated educational content
@@ -105,6 +106,18 @@ export class ExerciseGeneratorController {
           difficulty: 'beginner',
           targetAudience: 'programming students',
           numberOfItems: 3,
+        },
+      },
+      drag_and_drop_programming: {
+        summary: 'Drag and drop - Programming flow',
+        description: 'Drag and drop exercise for learning programming flow',
+        value: {
+          userId: '507f1f77bcf86cd799439015',
+          topic: 'Python - Flujo de un programa',
+          gameType: 'drag_and_drop',
+          difficulty: 'beginner',
+          targetAudience: 'programming students',
+          numberOfItems: 4,
         },
       },
     },
@@ -178,6 +191,36 @@ export class ExerciseGeneratorController {
                 },
               ],
               instructions: 'Da la vuelta a cada tarjeta para aprender o repasar conceptos clave de Python.',
+              createdAt: '2024-01-15T10:30:00.000Z',
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
+          },
+          drag_and_drop_example: {
+            summary: 'Drag and Drop Response',
+            value: {
+              id: 'ex_drag789drop',
+              game: 'drag_and_drop',
+              elements: [
+                {
+                  id: 1,
+                  texto: 'Importar librerías necesarias',
+                },
+                {
+                  id: 2,
+                  texto: 'Definir variables',
+                },
+                {
+                  id: 3,
+                  texto: 'Escribir funciones',
+                },
+                {
+                  id: 4,
+                  texto: 'Ejecutar el programa',
+                },
+              ],
+              correctOrder: [1, 2, 3, 4],
+              instructions: 'Arrastra y suelta cada paso en el orden correcto para escribir y ejecutar un programa en Python.',
+              explanation: 'El flujo lógico de un programa en Python comienza importando librerías, luego se definen variables, después se escriben las funciones y finalmente se ejecuta el programa.',
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -317,6 +360,12 @@ export class ExerciseGeneratorController {
           back: c.back,
         })),
         instructions: exercise.instructions,
+        elements: exercise.elements?.map((e) => ({
+          id: e.id,
+          texto: e.texto,
+        })),
+        correctOrder: exercise.correctOrder,
+        explanation: exercise.explanation,
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       }));
@@ -378,6 +427,12 @@ export class ExerciseGeneratorController {
           back: c.back,
         })),
         instructions: exercise.instructions,
+        elements: exercise.elements?.map((e) => ({
+          id: e.id,
+          texto: e.texto,
+        })),
+        correctOrder: exercise.correctOrder,
+        explanation: exercise.explanation,
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       };
@@ -537,6 +592,44 @@ export class ExerciseGeneratorController {
           ],
           instructions: 'Da la vuelta a cada tarjeta para aprender conceptos fundamentales de Python. (INSTRUCCIONES ACTUALIZADAS)',
           topic: 'Python Programming - Conceptos Básicos Actualizados'
+        },
+      },
+      drag_and_drop_update: {
+        summary: 'Update Drag and Drop Exercise',
+        description: 'Example of updating a drag and drop exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439018',
+          userId: '507f1f77bcf86cd799439011',
+          elements: [
+            {
+              id: 1,
+              texto: 'Instalar Python y configurar el entorno'
+            },
+            {
+              id: 2,
+              texto: 'Importar librerías necesarias'
+            },
+            {
+              id: 3,
+              texto: 'Definir variables y constantes'
+            },
+            {
+              id: 4,
+              texto: 'Escribir funciones principales'
+            },
+            {
+              id: 5,
+              texto: 'Implementar lógica de negocio'
+            },
+            {
+              id: 6,
+              texto: 'Ejecutar y probar el programa'
+            }
+          ],
+          correctOrder: [1, 2, 3, 4, 5, 6],
+          instructions: 'Arrastra y suelta cada paso en el orden correcto para desarrollar un programa completo en Python. (INSTRUCCIONES ACTUALIZADAS)',
+          explanation: 'El flujo completo de desarrollo en Python incluye la configuración del entorno, importación de librerías, definición de variables, escritura de funciones, implementación de la lógica y finalmente la ejecución y pruebas del programa.',
+          topic: 'Python - Ciclo Completo de Desarrollo de Software'
         },
       },
     },

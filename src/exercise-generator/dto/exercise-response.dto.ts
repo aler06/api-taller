@@ -2,6 +2,7 @@ import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { Game } from '../enum/game.enum';
 import { QuestionResponseDto } from './question-response.dto';
 import { CardResponseDto } from './card-response.dto';
+import { ElementResponseDto } from './element-response.dto';
 
 @ApiSchema({ name: 'ExerciseResponseDTO', description: 'Exercise response DTO' })
 export class ExerciseResponseDto {
@@ -64,5 +65,27 @@ export class ExerciseResponseDto {
         required: false
     })
     instructions?: string;
+
+    @ApiProperty({
+        description: 'Elements for quick sort/drag and drop game',
+        type: [ElementResponseDto],
+        required: false
+    })
+    elements?: ElementResponseDto[];
+
+    @ApiProperty({
+        description: 'Correct order of elements (array of element IDs)',
+        type: [Number],
+        example: [1, 2, 3, 4],
+        required: false
+    })
+    correctOrder?: number[];
+
+    @ApiProperty({
+        description: 'Explanation of the correct order or exercise solution',
+        example: 'El flujo lógico de un programa en Python comienza importando librerías...',
+        required: false
+    })
+    explanation?: string;
 
 }

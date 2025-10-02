@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsMongoId } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsMongoId, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { Game } from '../enum/game.enum';
@@ -66,6 +66,24 @@ export class CardUpdateDto {
   @IsString()
   @IsNotEmpty()
   back: string;
+}
+
+export class ElementUpdateDto {
+  @ApiProperty({
+    description: 'Unique identifier for the element',
+    example: 1
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  id: number;
+
+  @ApiProperty({
+    description: 'Text content of the element to be ordered',
+    example: 'Importar librerías necesarias'
+  })
+  @IsString()
+  @IsNotEmpty()
+  texto: string;
 }
 
 export class ExerciseUpdateRequestDTO {
@@ -165,4 +183,35 @@ export class ExerciseUpdateRequestDTO {
   @IsOptional()
   @IsString()
   instructions?: string;
+
+  @ApiProperty({
+    description: 'Updated elements for quick sort/drag and drop game',
+    type: [ElementUpdateDto],
+    required: false
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ElementUpdateDto)
+  elements?: ElementUpdateDto[];
+
+  @ApiProperty({
+    description: 'Updated correct order of elements (array of element IDs)',
+    type: [Number],
+    example: [1, 2, 3, 4],
+    required: false
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  correctOrder?: number[];
+
+  @ApiProperty({
+    description: 'Updated explanation of the correct order or exercise solution',
+    example: 'El flujo lógico de un programa en Python comienza importando librerías...',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  explanation?: string;
 }

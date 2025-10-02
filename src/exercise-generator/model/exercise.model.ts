@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Question } from './question.model';
 import { Card } from './card.model';
+import { Element } from './element.model';
 import { Game } from '../enum/game.enum';
 
 export type ExerciseDocument = Exercise & Document & {
@@ -41,6 +42,15 @@ export class Exercise {
 
     @Prop({ required: false })
     instructions?: string;
+
+    @Prop({ type: [Element], required: false })
+    elements?: Element[];
+
+    @Prop({ type: [Number], required: false })
+    correctOrder?: number[];
+
+    @Prop({ required: false })
+    explanation?: string;
 
 }
 

@@ -1,6 +1,7 @@
 import { ExerciseResponseDto } from '../dto/exercise-response.dto';
 import { QuestionResponseDto } from '../dto/question-response.dto';
 import { CardResponseDto } from '../dto/card-response.dto';
+import { ElementResponseDto } from '../dto/element-response.dto';
 import { Game } from '../enum/game.enum';
 
 export interface GeminiQuizResponse {
@@ -38,11 +39,25 @@ export interface GeminiFlipCardsResponse {
   instrucciones: string;
 }
 
+export interface GeminiDragAndDropResponse {
+  juego: string;
+  tema: string;
+  dificultad: string;
+  instrucciones: string;
+  elementos: Array<{
+    id: number;
+    texto: string;
+  }>;
+  orden_correcto: number[];
+  explicacion: string;
+}
+
 export type GeminiResponse =
   | GeminiQuizResponse
   | GeminiHangmanResponse
   | GeminiFillInTheBlankResponse
-  | GeminiFlipCardsResponse;
+  | GeminiFlipCardsResponse
+  | GeminiDragAndDropResponse;
 
 export class GeminiResponseMapper {
   static mapToExerciseResponseDto(geminiResponse: GeminiResponse, gameType: Game,): ExerciseResponseDto {
@@ -66,6 +81,9 @@ export class GeminiResponseMapper {
 
       case Game.FLIP_CARDS:
         return this.mapFlipCardsResponse(exercise, geminiResponse as GeminiFlipCardsResponse);
+
+      case Game.DRAG_AND_DROP:
+        return this.mapDragAndDropResponse(exercise, geminiResponse as GeminiDragAndDropResponse);
 
       default:
         throw new Error(`Unsupported game type: ${gameType}`);
@@ -111,6 +129,20 @@ export class GeminiResponseMapper {
       })) || [];
 
     exercise.instructions = flipCardsResponse.instrucciones;
+
+    return exercise;
+  }
+
+  private static mapDragAndDropResponse(exercise: ExerciseResponseDto, dragAndDropResponse: GeminiDragAndDropResponse,): ExerciseResponseDto {
+    exercise.elements =
+      dragAndDropResponse.elementos?.map((elemento): ElementResponseDto => ({
+        id: elemento.id,
+        texto: elemento.texto,
+      })) || [];
+
+    exercise.correctOrder = dragAndDropResponse.orden_correcto;
+    exercise.instructions = dragAndDropResponse.instrucciones;
+    exercise.explanation = dragAndDropResponse.explicacion;
 
     return exercise;
   }
