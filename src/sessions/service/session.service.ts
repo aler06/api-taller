@@ -5,8 +5,6 @@ import { Session, SessionDocument, SessionStatus } from '../model/session.model'
 import { CreateSessionRequestDTO } from '../dto/create-session-request.dto';
 import { JoinSessionRequestDTO } from '../dto/join-session-request.dto';
 import { SessionResponseDTO } from '../dto/session-response.dto';
-import { UserResponseDTO } from '../../users/dto/user-response.dto';
-import { ExerciseResponseDto } from '../../exercise-generator/dto/exercise-response.dto';
 import { Role } from '../../users/enum/role.enum';
 import { User } from '../../users/model/user.model';
 import { Exercise, ExerciseDocument } from '../../exercise-generator/model/exercise.model';
@@ -334,12 +332,6 @@ export class SessionService {
     answer: string, 
     timeSpent: number
   ): Promise<{ correct: boolean; score: number; correctAnswer: string; explanation: string }> {
-    // This is a simplified implementation
-    // In a real app, you'd want to:
-    // 1. Get the correct answer from the exercise
-    // 2. Calculate score based on correctness and time
-    // 3. Store the answer in a separate collection
-    // 4. Update user progress/statistics
     
     const session = await this.sessionModel.findById(sessionId).populate('exerciseIds');
     if (!session) {
