@@ -73,6 +73,11 @@ export class ExerciseGeneratorService {
         })),
         correctOrder: exerciseDto.correctOrder,
         explanation: exerciseDto.explanation,
+        trueFalseQuestions: exerciseDto.trueFalseQuestions?.map(tf => ({
+          statement: tf.statement,
+          correct_answer: tf.correct_answer,
+          explanation: tf.explanation,
+        })),
         topic: request.topic,
         difficulty: request.difficulty,
         targetAudience: request.targetAudience,
@@ -207,6 +212,25 @@ Ejemplo de schema para arrastrar y soltar:
   ],
   "orden_correcto": [1, 2, 3, 4],
   "explicacion": "El flujo lógico de un programa en Python comienza importando librerías, luego se definen variables, después se escriben las funciones y finalmente se ejecuta el programa."
+}`;
+        break;
+      case Game.TRUE_OR_FALSE:
+        gameInstructions = `
+Ejemplo de schema para verdadero o falso:
+{
+  "juego": "true_or_false",
+  "preguntas": [
+    {
+      "afirmacion": "Python es un lenguaje de programación compilado",
+      "respuesta_correcta": false,
+      "explicacion": "Python es un lenguaje interpretado, no compilado. El código se ejecuta línea por línea a través de un intérprete."
+    },
+    {
+      "afirmacion": "Las variables en Python deben declararse con un tipo específico",
+      "respuesta_correcta": false,
+      "explicacion": "Python es un lenguaje de tipado dinámico, las variables no necesitan declaración de tipo explícita."
+    }
+  ]
 }`;
         break;
     }
@@ -345,6 +369,14 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         updateData.explanation = request.explanation;
       }
 
+      if (request.trueFalseQuestions !== undefined) {
+        updateData.trueFalseQuestions = request.trueFalseQuestions.map(tf => ({
+          statement: tf.statement,
+          correct_answer: tf.correct_answer,
+          explanation: tf.explanation,
+        }));
+      }
+
       // Update the exercise
       const updatedExercise = await this.exerciseModel
         .findByIdAndUpdate(request.exerciseId, updateData, { new: true })
@@ -378,6 +410,11 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         })),
         correctOrder: updatedExercise.correctOrder,
         explanation: updatedExercise.explanation,
+        trueFalseQuestions: updatedExercise.trueFalseQuestions?.map((tf) => ({
+          statement: tf.statement,
+          correct_answer: tf.correct_answer,
+          explanation: tf.explanation,
+        })),
         createdAt: updatedExercise.createdAt,
         updatedAt: updatedExercise.updatedAt,
       };

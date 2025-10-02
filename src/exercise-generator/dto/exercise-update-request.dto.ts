@@ -2,6 +2,7 @@ import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsMongoId, I
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { Game } from '../enum/game.enum';
+import { TrueFalseUpdateDto } from './true-false-update.dto';
 
 export class QuestionUpdateDto {
   @ApiProperty({
@@ -214,4 +215,15 @@ export class ExerciseUpdateRequestDTO {
   @IsOptional()
   @IsString()
   explanation?: string;
+
+  @ApiProperty({
+    description: 'Updated true/false questions for the exercise',
+    type: [TrueFalseUpdateDto],
+    required: false
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TrueFalseUpdateDto)
+  trueFalseQuestions?: TrueFalseUpdateDto[];
 }

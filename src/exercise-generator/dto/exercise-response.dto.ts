@@ -3,6 +3,7 @@ import { Game } from '../enum/game.enum';
 import { QuestionResponseDto } from './question-response.dto';
 import { CardResponseDto } from './card-response.dto';
 import { ElementResponseDto } from './element-response.dto';
+import { TrueFalseResponseDto } from './true-false-response.dto';
 
 @ApiSchema({ name: 'ExerciseResponseDTO', description: 'Exercise response DTO' })
 export class ExerciseResponseDto {
@@ -87,5 +88,12 @@ export class ExerciseResponseDto {
         required: false
     })
     explanation?: string;
+
+    @ApiProperty({
+        description: 'True/False questions for the exercise',
+        type: [TrueFalseResponseDto],
+        required: false
+    })
+    trueFalseQuestions?: TrueFalseResponseDto[];
 
 }

@@ -2,6 +2,7 @@ import { ExerciseResponseDto } from '../dto/exercise-response.dto';
 import { QuestionResponseDto } from '../dto/question-response.dto';
 import { CardResponseDto } from '../dto/card-response.dto';
 import { ElementResponseDto } from '../dto/element-response.dto';
+import { TrueFalseResponseDto } from '../dto/true-false-response.dto';
 import { Game } from '../enum/game.enum';
 
 export interface GeminiQuizResponse {
@@ -52,12 +53,22 @@ export interface GeminiDragAndDropResponse {
   explicacion: string;
 }
 
+export interface GeminiTrueFalseResponse {
+  juego: string;
+  preguntas: Array<{
+    afirmacion: string;
+    respuesta_correcta: boolean;
+    explicacion: string;
+  }>;
+}
+
 export type GeminiResponse =
   | GeminiQuizResponse
   | GeminiHangmanResponse
   | GeminiFillInTheBlankResponse
   | GeminiFlipCardsResponse
-  | GeminiDragAndDropResponse;
+  | GeminiDragAndDropResponse
+  | GeminiTrueFalseResponse;
 
 export class GeminiResponseMapper {
   static mapToExerciseResponseDto(geminiResponse: GeminiResponse, gameType: Game,): ExerciseResponseDto {
@@ -84,6 +95,9 @@ export class GeminiResponseMapper {
 
       case Game.DRAG_AND_DROP:
         return this.mapDragAndDropResponse(exercise, geminiResponse as GeminiDragAndDropResponse);
+
+      case Game.TRUE_OR_FALSE:
+        return this.mapTrueFalseResponse(exercise, geminiResponse as GeminiTrueFalseResponse);
 
       default:
         throw new Error(`Unsupported game type: ${gameType}`);
@@ -143,6 +157,17 @@ export class GeminiResponseMapper {
     exercise.correctOrder = dragAndDropResponse.orden_correcto;
     exercise.instructions = dragAndDropResponse.instrucciones;
     exercise.explanation = dragAndDropResponse.explicacion;
+
+    return exercise;
+  }
+
+  private static mapTrueFalseResponse(exercise: ExerciseResponseDto, trueFalseResponse: GeminiTrueFalseResponse,): ExerciseResponseDto {
+    exercise.trueFalseQuestions =
+      trueFalseResponse.preguntas?.map((pregunta): TrueFalseResponseDto => ({
+        statement: pregunta.afirmacion,
+        correct_answer: pregunta.respuesta_correcta,
+        explanation: pregunta.explicacion,
+      })) || [];
 
     return exercise;
   }

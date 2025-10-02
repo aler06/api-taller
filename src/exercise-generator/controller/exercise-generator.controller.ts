@@ -49,6 +49,7 @@ export class ExerciseGeneratorController {
       - **Fill in the blank**: Sentences with blank spaces to complete using multiple choice options
       - **Flip cards**: Cards with front and back sides to flip and learn
       - **Drag and drop**: Elements to drag and drop in the correct order
+      - **True or false**: True or false questions with explanations
       
       **Features:**
       - AI-generated educational content
@@ -118,6 +119,18 @@ export class ExerciseGeneratorController {
           difficulty: 'beginner',
           targetAudience: 'programming students',
           numberOfItems: 4,
+        },
+      },
+      true_or_false_programming: {
+        summary: 'True or False - Programming concepts',
+        description: 'True or False exercise for programming knowledge',
+        value: {
+          userId: '507f1f77bcf86cd799439016',
+          topic: 'Python Programming Fundamentals',
+          gameType: 'true_or_false',
+          difficulty: 'intermediate',
+          targetAudience: 'programming students',
+          numberOfItems: 5,
         },
       },
     },
@@ -221,6 +234,27 @@ export class ExerciseGeneratorController {
               correctOrder: [1, 2, 3, 4],
               instructions: 'Arrastra y suelta cada paso en el orden correcto para escribir y ejecutar un programa en Python.',
               explanation: 'El flujo lógico de un programa en Python comienza importando librerías, luego se definen variables, después se escriben las funciones y finalmente se ejecuta el programa.',
+              createdAt: '2024-01-15T10:30:00.000Z',
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
+          },
+          true_or_false_example: {
+            summary: 'True or False Response',
+            value: {
+              id: 'ex_tf123false',
+              game: 'true_or_false',
+              trueFalseQuestions: [
+                {
+                  statement: 'Python is a compiled programming language',
+                  correct_answer: false,
+                  explanation: 'Python is actually an interpreted programming language, not compiled. The code is executed line by line through an interpreter.',
+                },
+                {
+                  statement: 'Variables in Python must be declared with a specific type',
+                  correct_answer: false,
+                  explanation: 'Python is dynamically typed, variables do not need explicit type declaration.',
+                },
+              ],
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -366,6 +400,11 @@ export class ExerciseGeneratorController {
         })),
         correctOrder: exercise.correctOrder,
         explanation: exercise.explanation,
+        trueFalseQuestions: exercise.trueFalseQuestions?.map((tf) => ({
+          statement: tf.statement,
+          correct_answer: tf.correct_answer,
+          explanation: tf.explanation,
+        })),
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       }));
@@ -433,6 +472,11 @@ export class ExerciseGeneratorController {
         })),
         correctOrder: exercise.correctOrder,
         explanation: exercise.explanation,
+        trueFalseQuestions: exercise.trueFalseQuestions?.map((tf) => ({
+          statement: tf.statement,
+          correct_answer: tf.correct_answer,
+          explanation: tf.explanation,
+        })),
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       };
@@ -630,6 +674,32 @@ export class ExerciseGeneratorController {
           instructions: 'Arrastra y suelta cada paso en el orden correcto para desarrollar un programa completo en Python. (INSTRUCCIONES ACTUALIZADAS)',
           explanation: 'El flujo completo de desarrollo en Python incluye la configuración del entorno, importación de librerías, definición de variables, escritura de funciones, implementación de la lógica y finalmente la ejecución y pruebas del programa.',
           topic: 'Python - Ciclo Completo de Desarrollo de Software'
+        },
+      },
+      true_or_false_update: {
+        summary: 'Update True or False Exercise',
+        description: 'Example of updating a true or false exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439019',
+          userId: '507f1f77bcf86cd799439011',
+          trueFalseQuestions: [
+            {
+              statement: 'Python es un lenguaje de programación compilado (ACTUALIZADA)',
+              correct_answer: false,
+              explanation: 'Python es un lenguaje interpretado, no compilado. El código se ejecuta línea por línea a través de un intérprete. (EXPLICACIÓN ACTUALIZADA)'
+            },
+            {
+              statement: 'Las variables en Python deben declararse con un tipo específico',
+              correct_answer: false,
+              explanation: 'Python es un lenguaje de tipado dinámico, las variables no necesitan declaración de tipo explícita.'
+            },
+            {
+              statement: 'Python soporta programación orientada a objetos (NUEVA PREGUNTA)',
+              correct_answer: true,
+              explanation: 'Python es un lenguaje multiparadigma que soporta programación orientada a objetos, funcional y procedural.'
+            }
+          ],
+          topic: 'Python Programming - Conceptos Fundamentales Actualizados'
         },
       },
     },

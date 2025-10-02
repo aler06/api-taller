@@ -33,7 +33,7 @@ export class ExerciseRequestDTO {
     example: 'quiz',
     enum: Game
   })
-  @IsEnum(Game, { message: 'Game type must be one of: quiz, hangman, fill_in_the_blank' })
+  @IsEnum(Game, { message: 'Game type must be one of: quiz, hangman, fill_in_the_blank, flip_cards, drag_and_drop, true_or_false' })
   @IsNotEmpty({ message: 'Game type is required' })
   gameType: Game;
 
