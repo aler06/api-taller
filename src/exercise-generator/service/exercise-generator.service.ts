@@ -78,6 +78,9 @@ export class ExerciseGeneratorService {
           correct_answer: tf.correct_answer,
           explanation: tf.explanation,
         })),
+        phrases: exerciseDto.phrases?.map(p => ({
+          text: p.text,
+        })),
         topic: request.topic,
         difficulty: request.difficulty,
         targetAudience: request.targetAudience,
@@ -233,12 +236,30 @@ Ejemplo de schema para verdadero o falso:
   ]
 }`;
         break;
+      case Game.ROULETTE:
+        gameInstructions = `
+Ejemplo de schema para ruleta:
+{
+  "juego": "ruleta",
+  "tema": "Programación",
+  "dificultad": "intermedio",
+  "audiencia": "estudiantes universitarios",
+  "instrucciones": "Gira la ruleta y responde la pregunta que te toque. Cada pregunta está relacionada con conceptos básicos de programación.",
+  "frases": [
+    "Python es un lenguaje de tipado dinámico.",
+    "La programación orientada a objetos se basa en clases y objetos.",
+    "Java no permite herencia múltiple de clases, pero sí de interfaces.",
+    "Las estructuras de control como bucles permiten ejecutar código repetidamente."
+  ]
+}`;
+        break;
     }
 
     return `El usuario te pedirá que elabores una sesión educativa sobre un tema específico.
 1. Primero, desarrolla la sesión con explicaciones claras, organizadas y fáciles de entender.
 2. Después, crea un juego interactivo relacionado con la sesión. Debe ser un ${request.gameType}.
 3. La salida del juego debe estar en formato schema estructurado en JSON, de manera que sea fácil de procesar por otro sistema.
+4. Si el juego es de tipo ruleta, asegúrate de que las frases sean relevantes para el tema de la sesión, no pongas frases que sean tipo preguntas o que se explique algo.
 
 ${gameInstructions}
 
@@ -377,6 +398,12 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         }));
       }
 
+      if (request.phrases !== undefined) {
+        updateData.phrases = request.phrases.map(p => ({
+          text: p.text,
+        }));
+      }
+
       // Update the exercise
       const updatedExercise = await this.exerciseModel
         .findByIdAndUpdate(request.exerciseId, updateData, { new: true })
@@ -414,6 +441,9 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
           statement: tf.statement,
           correct_answer: tf.correct_answer,
           explanation: tf.explanation,
+        })),
+        phrases: updatedExercise.phrases?.map((p) => ({
+          text: p.text,
         })),
         createdAt: updatedExercise.createdAt,
         updatedAt: updatedExercise.updatedAt,

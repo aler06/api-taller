@@ -50,6 +50,7 @@ export class ExerciseGeneratorController {
       - **Flip cards**: Cards with front and back sides to flip and learn
       - **Drag and drop**: Elements to drag and drop in the correct order
       - **True or false**: True or false questions with explanations
+      - **Roulette**: Interactive roulette with educational phrases
       
       **Features:**
       - AI-generated educational content
@@ -131,6 +132,18 @@ export class ExerciseGeneratorController {
           difficulty: 'intermediate',
           targetAudience: 'programming students',
           numberOfItems: 5,
+        },
+      },
+      roulette_programming: {
+        summary: 'Roulette - Programming concepts',
+        description: 'Interactive roulette game for learning programming concepts',
+        value: {
+          userId: '507f1f77bcf86cd799439017',
+          topic: 'Programming Fundamentals',
+          gameType: 'roulette',
+          difficulty: 'intermediate',
+          targetAudience: 'university students',
+          numberOfItems: 4,
         },
       },
     },
@@ -255,6 +268,30 @@ export class ExerciseGeneratorController {
                   explanation: 'Python is dynamically typed, variables do not need explicit type declaration.',
                 },
               ],
+              createdAt: '2024-01-15T10:30:00.000Z',
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
+          },
+          roulette_example: {
+            summary: 'Roulette Response',
+            value: {
+              id: 'ex_roulette456',
+              game: 'roulette',
+              phrases: [
+                {
+                  text: 'Python es un lenguaje de tipado dinámico.',
+                },
+                {
+                  text: 'La programación orientada a objetos se basa en clases y objetos.',
+                },
+                {
+                  text: 'Java no permite herencia múltiple de clases, pero sí de interfaces.',
+                },
+                {
+                  text: 'Las estructuras de control como bucles permiten ejecutar código repetidamente.',
+                },
+              ],
+              instructions: 'Gira la ruleta y responde la pregunta que te toque. Cada pregunta está relacionada con conceptos básicos de programación.',
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -405,6 +442,9 @@ export class ExerciseGeneratorController {
           correct_answer: tf.correct_answer,
           explanation: tf.explanation,
         })),
+        phrases: exercise.phrases?.map((p) => ({
+          text: p.text,
+        })),
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       }));
@@ -476,6 +516,9 @@ export class ExerciseGeneratorController {
           statement: tf.statement,
           correct_answer: tf.correct_answer,
           explanation: tf.explanation,
+        })),
+        phrases: exercise.phrases?.map((p) => ({
+          text: p.text,
         })),
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
@@ -700,6 +743,30 @@ export class ExerciseGeneratorController {
             }
           ],
           topic: 'Python Programming - Conceptos Fundamentales Actualizados'
+        },
+      },
+      roulette_update: {
+        summary: 'Update Roulette Exercise',
+        description: 'Example of updating a roulette exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439020',
+          userId: '507f1f77bcf86cd799439011',
+          phrases: [
+            {
+              text: 'Python es un lenguaje de tipado dinámico y interpretado (ACTUALIZADA).'
+            },
+            {
+              text: 'La programación orientada a objetos se basa en clases y objetos.'
+            },
+            {
+              text: 'Java no permite herencia múltiple de clases, pero sí de interfaces.'
+            },
+            {
+              text: 'Las funciones en Python pueden retornar múltiples valores (NUEVA FRASE).'
+            }
+          ],
+          instructions: 'Gira la ruleta y responde las preguntas sobre conceptos fundamentales de programación. (INSTRUCCIONES ACTUALIZADAS)',
+          topic: 'Programming Fundamentals - Conceptos Actualizados'
         },
       },
     },

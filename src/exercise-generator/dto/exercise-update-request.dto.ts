@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { Game } from '../enum/game.enum';
 import { TrueFalseUpdateDto } from './true-false-update.dto';
+import { PhraseUpdateDto } from './phrase-update.dto';
 
 export class QuestionUpdateDto {
   @ApiProperty({
@@ -226,4 +227,15 @@ export class ExerciseUpdateRequestDTO {
   @ValidateNested({ each: true })
   @Type(() => TrueFalseUpdateDto)
   trueFalseQuestions?: TrueFalseUpdateDto[];
+
+  @ApiProperty({
+    description: 'Updated phrases for the roulette game',
+    type: [PhraseUpdateDto],
+    required: false
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PhraseUpdateDto)
+  phrases?: PhraseUpdateDto[];
 }

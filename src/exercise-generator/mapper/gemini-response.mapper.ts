@@ -3,6 +3,7 @@ import { QuestionResponseDto } from '../dto/question-response.dto';
 import { CardResponseDto } from '../dto/card-response.dto';
 import { ElementResponseDto } from '../dto/element-response.dto';
 import { TrueFalseResponseDto } from '../dto/true-false-response.dto';
+import { PhraseResponseDto } from '../dto/phrase-response.dto';
 import { Game } from '../enum/game.enum';
 
 export interface GeminiQuizResponse {
@@ -62,13 +63,23 @@ export interface GeminiTrueFalseResponse {
   }>;
 }
 
+export interface GeminiRouletteResponse {
+  juego: string;
+  tema: string;
+  dificultad: string;
+  audiencia: string;
+  instrucciones: string;
+  frases: string[];
+}
+
 export type GeminiResponse =
   | GeminiQuizResponse
   | GeminiHangmanResponse
   | GeminiFillInTheBlankResponse
   | GeminiFlipCardsResponse
   | GeminiDragAndDropResponse
-  | GeminiTrueFalseResponse;
+  | GeminiTrueFalseResponse
+  | GeminiRouletteResponse;
 
 export class GeminiResponseMapper {
   static mapToExerciseResponseDto(geminiResponse: GeminiResponse, gameType: Game,): ExerciseResponseDto {
@@ -98,6 +109,9 @@ export class GeminiResponseMapper {
 
       case Game.TRUE_OR_FALSE:
         return this.mapTrueFalseResponse(exercise, geminiResponse as GeminiTrueFalseResponse);
+
+      case Game.ROULETTE:
+        return this.mapRouletteResponse(exercise, geminiResponse as GeminiRouletteResponse);
 
       default:
         throw new Error(`Unsupported game type: ${gameType}`);
@@ -168,6 +182,17 @@ export class GeminiResponseMapper {
         correct_answer: pregunta.respuesta_correcta,
         explanation: pregunta.explicacion,
       })) || [];
+
+    return exercise;
+  }
+
+  private static mapRouletteResponse(exercise: ExerciseResponseDto, rouletteResponse: GeminiRouletteResponse,): ExerciseResponseDto {
+    exercise.phrases =
+      rouletteResponse.frases?.map((frase): PhraseResponseDto => ({
+        text: frase,
+      })) || [];
+
+    exercise.instructions = rouletteResponse.instrucciones;
 
     return exercise;
   }

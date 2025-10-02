@@ -4,6 +4,7 @@ import { Question } from './question.model';
 import { Card } from './card.model';
 import { Element } from './element.model';
 import { TrueFalse } from './true-false.model';
+import { Phrase } from './phrase.model';
 import { Game } from '../enum/game.enum';
 
 export type ExerciseDocument = Exercise & Document & {
@@ -55,6 +56,9 @@ export class Exercise {
 
     @Prop({ type: [TrueFalse], required: false })
     trueFalseQuestions?: TrueFalse[];
+
+    @Prop({ type: [Phrase], required: false })
+    phrases?: Phrase[];
 
 }
 
