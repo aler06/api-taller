@@ -5,6 +5,7 @@ import { CardResponseDto } from './card-response.dto';
 import { ElementResponseDto } from './element-response.dto';
 import { TrueFalseResponseDto } from './true-false-response.dto';
 import { PhraseResponseDto } from './phrase-response.dto';
+import { PairResponseDto } from './pair-response.dto';
 
 @ApiSchema({ name: 'ExerciseResponseDTO', description: 'Exercise response DTO' })
 export class ExerciseResponseDto {
@@ -103,5 +104,12 @@ export class ExerciseResponseDto {
         required: false
     })
     phrases?: PhraseResponseDto[];
+
+    @ApiProperty({
+        description: 'Pairs for the matching game',
+        type: [PairResponseDto],
+        required: false
+    })
+    pairs?: PairResponseDto[];
 
 }

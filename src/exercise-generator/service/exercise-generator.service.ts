@@ -81,6 +81,10 @@ export class ExerciseGeneratorService {
         phrases: exerciseDto.phrases?.map(p => ({
           text: p.text,
         })),
+        pairs: exerciseDto.pairs?.map(p => ({
+          term: p.term,
+          match: p.match,
+        })),
         topic: request.topic,
         difficulty: request.difficulty,
         targetAudience: request.targetAudience,
@@ -253,6 +257,31 @@ Ejemplo de schema para ruleta:
   ]
 }`;
         break;
+      case Game.MATCHING:
+        gameInstructions = `
+Ejemplo de schema para matching:
+{
+  "juego": "matching",
+  "tema": "Programación",
+  "dificultad": "intermedio",
+  "audiencia": "estudiantes universitarios",
+  "instrucciones": "Empareja cada concepto con su definición correcta.",
+  "pares": [
+    {
+      "termino": "Variable",
+      "coincidencia": "Espacio en memoria que almacena un valor"
+    },
+    {
+      "termino": "Función",
+      "coincidencia": "Bloque de código reutilizable que realiza una tarea"
+    },
+    {
+      "termino": "Clase",
+      "coincidencia": "Plantilla para crear objetos en programación orientada a objetos"
+    }
+  ]
+}`;
+        break;
     }
 
     return `El usuario te pedirá que elabores una sesión educativa sobre un tema específico.
@@ -404,6 +433,13 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         }));
       }
 
+      if (request.pairs !== undefined) {
+        updateData.pairs = request.pairs.map(p => ({
+          term: p.term,
+          match: p.match,
+        }));
+      }
+
       // Update the exercise
       const updatedExercise = await this.exerciseModel
         .findByIdAndUpdate(request.exerciseId, updateData, { new: true })
@@ -444,6 +480,10 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         })),
         phrases: updatedExercise.phrases?.map((p) => ({
           text: p.text,
+        })),
+        pairs: updatedExercise.pairs?.map((p) => ({
+          term: p.term,
+          match: p.match,
         })),
         createdAt: updatedExercise.createdAt,
         updatedAt: updatedExercise.updatedAt,

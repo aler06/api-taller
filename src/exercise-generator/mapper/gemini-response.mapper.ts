@@ -4,6 +4,7 @@ import { CardResponseDto } from '../dto/card-response.dto';
 import { ElementResponseDto } from '../dto/element-response.dto';
 import { TrueFalseResponseDto } from '../dto/true-false-response.dto';
 import { PhraseResponseDto } from '../dto/phrase-response.dto';
+import { PairResponseDto } from '../dto/pair-response.dto';
 import { Game } from '../enum/game.enum';
 
 export interface GeminiQuizResponse {
@@ -72,6 +73,18 @@ export interface GeminiRouletteResponse {
   frases: string[];
 }
 
+export interface GeminiMatchingResponse {
+  juego: string;
+  tema: string;
+  dificultad: string;
+  audiencia: string;
+  instrucciones: string;
+  pares: Array<{
+    termino: string;
+    coincidencia: string;
+  }>;
+}
+
 export type GeminiResponse =
   | GeminiQuizResponse
   | GeminiHangmanResponse
@@ -79,7 +92,8 @@ export type GeminiResponse =
   | GeminiFlipCardsResponse
   | GeminiDragAndDropResponse
   | GeminiTrueFalseResponse
-  | GeminiRouletteResponse;
+  | GeminiRouletteResponse
+  | GeminiMatchingResponse;
 
 export class GeminiResponseMapper {
   static mapToExerciseResponseDto(geminiResponse: GeminiResponse, gameType: Game,): ExerciseResponseDto {
@@ -112,6 +126,9 @@ export class GeminiResponseMapper {
 
       case Game.ROULETTE:
         return this.mapRouletteResponse(exercise, geminiResponse as GeminiRouletteResponse);
+
+      case Game.MATCHING:
+        return this.mapMatchingResponse(exercise, geminiResponse as GeminiMatchingResponse);
 
       default:
         throw new Error(`Unsupported game type: ${gameType}`);
@@ -193,6 +210,18 @@ export class GeminiResponseMapper {
       })) || [];
 
     exercise.instructions = rouletteResponse.instrucciones;
+
+    return exercise;
+  }
+
+  private static mapMatchingResponse(exercise: ExerciseResponseDto, matchingResponse: GeminiMatchingResponse,): ExerciseResponseDto {
+    exercise.pairs =
+      matchingResponse.pares?.map((par): PairResponseDto => ({
+        term: par.termino,
+        match: par.coincidencia,
+      })) || [];
+
+    exercise.instructions = matchingResponse.instrucciones;
 
     return exercise;
   }

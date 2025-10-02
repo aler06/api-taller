@@ -49,8 +49,9 @@ export class ExerciseGeneratorController {
       - **Fill in the blank**: Sentences with blank spaces to complete using multiple choice options
       - **Flip cards**: Cards with front and back sides to flip and learn
       - **Drag and drop**: Elements to drag and drop in the correct order
-      - **True or false**: True or false questions with explanations
-      - **Roulette**: Interactive roulette with educational phrases
+        - **True or false**: True or false questions with explanations
+        - **Roulette**: Interactive roulette with educational phrases
+        - **Matching**: Match terms with their corresponding definitions
       
       **Features:**
       - AI-generated educational content
@@ -144,6 +145,18 @@ export class ExerciseGeneratorController {
           difficulty: 'intermediate',
           targetAudience: 'university students',
           numberOfItems: 4,
+        },
+      },
+      matching_programming: {
+        summary: 'Matching - Programming concepts',
+        description: 'Matching game for learning programming terms and definitions',
+        value: {
+          userId: '507f1f77bcf86cd799439018',
+          topic: 'Programming Fundamentals',
+          gameType: 'matching',
+          difficulty: 'intermediate',
+          targetAudience: 'university students',
+          numberOfItems: 3,
         },
       },
     },
@@ -292,6 +305,30 @@ export class ExerciseGeneratorController {
                 },
               ],
               instructions: 'Gira la ruleta y responde la pregunta que te toque. Cada pregunta está relacionada con conceptos básicos de programación.',
+              createdAt: '2024-01-15T10:30:00.000Z',
+              updatedAt: '2024-01-15T10:30:00.000Z',
+            },
+          },
+          matching_example: {
+            summary: 'Matching Response',
+            value: {
+              id: 'ex_matching789',
+              game: 'matching',
+              pairs: [
+                {
+                  term: 'Variable',
+                  match: 'Espacio en memoria que almacena un valor',
+                },
+                {
+                  term: 'Función',
+                  match: 'Bloque de código reutilizable que realiza una tarea',
+                },
+                {
+                  term: 'Clase',
+                  match: 'Plantilla para crear objetos en programación orientada a objetos',
+                },
+              ],
+              instructions: 'Empareja cada concepto con su definición correcta.',
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -445,6 +482,10 @@ export class ExerciseGeneratorController {
         phrases: exercise.phrases?.map((p) => ({
           text: p.text,
         })),
+        pairs: exercise.pairs?.map((p) => ({
+          term: p.term,
+          match: p.match,
+        })),
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
       }));
@@ -519,6 +560,10 @@ export class ExerciseGeneratorController {
         })),
         phrases: exercise.phrases?.map((p) => ({
           text: p.text,
+        })),
+        pairs: exercise.pairs?.map((p) => ({
+          term: p.term,
+          match: p.match,
         })),
         createdAt: exercise.createdAt,
         updatedAt: exercise.updatedAt,
@@ -767,6 +812,30 @@ export class ExerciseGeneratorController {
           ],
           instructions: 'Gira la ruleta y responde las preguntas sobre conceptos fundamentales de programación. (INSTRUCCIONES ACTUALIZADAS)',
           topic: 'Programming Fundamentals - Conceptos Actualizados'
+        },
+      },
+      matching_update: {
+        summary: 'Update Matching Exercise',
+        description: 'Example of updating a matching exercise',
+        value: {
+          exerciseId: '507f1f77bcf86cd799439021',
+          userId: '507f1f77bcf86cd799439011',
+          pairs: [
+            {
+              term: 'Variable (ACTUALIZADA)',
+              match: 'Espacio en memoria que almacena un valor y puede cambiar durante la ejecución'
+            },
+            {
+              term: 'Función',
+              match: 'Bloque de código reutilizable que realiza una tarea específica'
+            },
+            {
+              term: 'Algoritmo (NUEVO TÉRMINO)',
+              match: 'Secuencia de pasos lógicos para resolver un problema'
+            }
+          ],
+          instructions: 'Empareja cada concepto de programación con su definición correcta. (INSTRUCCIONES ACTUALIZADAS)',
+          topic: 'Programming Fundamentals - Conceptos y Definiciones Actualizados'
         },
       },
     },

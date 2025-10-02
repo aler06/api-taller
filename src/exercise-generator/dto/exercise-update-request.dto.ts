@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { Game } from '../enum/game.enum';
 import { TrueFalseUpdateDto } from './true-false-update.dto';
 import { PhraseUpdateDto } from './phrase-update.dto';
+import { PairUpdateDto } from './pair-update.dto';
 
 export class QuestionUpdateDto {
   @ApiProperty({
@@ -238,4 +239,15 @@ export class ExerciseUpdateRequestDTO {
   @ValidateNested({ each: true })
   @Type(() => PhraseUpdateDto)
   phrases?: PhraseUpdateDto[];
+
+  @ApiProperty({
+    description: 'Updated pairs for the matching game',
+    type: [PairUpdateDto],
+    required: false
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PairUpdateDto)
+  pairs?: PairUpdateDto[];
 }
