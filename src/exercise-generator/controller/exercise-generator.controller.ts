@@ -49,9 +49,9 @@ export class ExerciseGeneratorController {
       - **Fill in the blank**: Sentences with blank spaces to complete using multiple choice options
       - **Flip cards**: Cards with front and back sides to flip and learn
       - **Drag and drop**: Elements to drag and drop in the correct order
-        - **True or false**: True or false questions with explanations
-        - **Roulette**: Interactive roulette with educational phrases
-        - **Matching**: Match terms with their corresponding definitions
+      - **True or false**: True or false questions with explanations
+      - **Roulette**: Interactive roulette with educational phrases
+      - **Matching**: Match terms with their corresponding definitions
       
       **Features:**
       - AI-generated educational content

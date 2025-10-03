@@ -10,8 +10,6 @@ import { Game } from '../enum/game.enum';
 import { GeminiResponseMapper } from '../mapper';
 import { Exercise, ExerciseDocument } from '../model/exercise.model';
 import { UsersService } from '../../users/service/users.service';
-import { Role } from '../../users/enum/role.enum';
-
 @Injectable()
 export class ExerciseGeneratorService {
   private readonly logger = new Logger(ExerciseGeneratorService.name);
