@@ -35,7 +35,7 @@ ENV NODE_ENV=production
 
 USER nestjs
 
-EXPOSE 3005
+EXPOSE 3010
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:3005/api/v1/health || exit 1

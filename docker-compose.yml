@@ -7,9 +7,9 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      PORT: 3005
+      PORT: 3010
     ports:
-      - "3005"
+      - "3010"
     volumes:
       - ./logs:/app/logs:rw
     restart: unless-stopped
