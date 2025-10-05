@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  quizify-api:
+    image: alerr04/quizify-api:0.9.0-dev
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./logs:/app/logs:rw
+    restart: unless-stopped
+
+    
