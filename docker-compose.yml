@@ -8,6 +8,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3010
+      # URLs del frontend permitidas para CORS (separadas por coma)
+      CORS_ORIGINS: "https://taller-frontend-bhaobk-607ebf-173-212-248-96.traefik.me,http://taller-frontend-bhaobk-607ebf-173-212-248-96.traefik.me"
     ports:
       - "3010"
     volumes:
