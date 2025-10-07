@@ -20,7 +20,7 @@ async function bootstrap() {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:8080',
-      'https://taller-frontend-bhaobk-607ebf-173-212-248-96.traefik.me',
+      'https://taller-frontend-bhaobk-607ebf-173-212-248-96.traefik.me:3011',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
