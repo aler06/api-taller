@@ -18,6 +18,8 @@ import {
 import { AuthService } from '../service/auth.service';
 import { LoginRequestDto } from '../dto/login-request.dto';
 import { LoginResponseDto } from '../dto/login-response.dto';
+import { RegisterRequestDto } from '../dto/register-request.dto';
+import { RegisterResponseDto } from '../dto/register-response.dto';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { LocalAuthGuard } from '../guard/local-auth.guard';
 
@@ -67,6 +69,49 @@ export class AuthController {
     })
     async login(@Body() loginDto: LoginRequestDto): Promise<LoginResponseDto> {
         return this.authService.login(loginDto);
+    }
+
+    @Post('register')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({
+        summary: 'Registrar nuevo usuario',
+        description: 'Permite a un usuario registrarse como profesor o estudiante',
+    })
+    @ApiBody({
+        type: RegisterRequestDto,
+        description: 'Datos de registro del usuario',
+    })
+    @ApiResponse({
+        status: 201,
+        description: 'Usuario registrado exitosamente',
+        type: RegisterResponseDto,
+    })
+    @ApiResponse({
+        status: 409,
+        description: 'El email ya está registrado',
+        schema: {
+            type: 'object',
+            properties: {
+                statusCode: { type: 'number', example: 409 },
+                message: { type: 'string', example: 'User with this email already exists' },
+                error: { type: 'string', example: 'Conflict' },
+            },
+        },
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Datos de entrada inválidos',
+        schema: {
+            type: 'object',
+            properties: {
+                statusCode: { type: 'number', example: 400 },
+                message: { type: 'array', items: { type: 'string' } },
+                error: { type: 'string', example: 'Bad Request' },
+            },
+        },
+    })
+    async register(@Body() registerDto: RegisterRequestDto): Promise<RegisterResponseDto> {
+        return this.authService.register(registerDto);
     }
 
     @Get('profile')
