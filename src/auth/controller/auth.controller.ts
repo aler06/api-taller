@@ -237,9 +237,11 @@ export class AuthController {
         },
     })
     async validateToken(@Request() req: any) {
+        console.log('[VALIDATE-TOKEN] User from JWT:', req.user);
         return {
             valid: true,
             user: req.user,
+            message: `Tu rol actual es: ${req.user.role}. Para crear sesiones necesitas el rol 'teacher'.`
         };
     }
 }
