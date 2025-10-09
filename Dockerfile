@@ -37,7 +37,7 @@ USER nestjs
 
 EXPOSE 3010
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:3010/api/v1/docs || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
