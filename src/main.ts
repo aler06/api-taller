@@ -13,9 +13,13 @@ async function bootstrap() {
   
   console.log('🌐 CORS enabled for ALL origins');
 
-  // Configurar CORS para permitir todos los orígenes
+  // Configurar CORS para permitir todos los orígenes con credentials
   app.enableCors({
-    origin: true, // Permite todos los orígenes
+    origin: (origin, callback) => {
+      // Permitir cualquier origen (o sin origen para requests como curl)
+      console.log(`✅ CORS: Allowing origin: ${origin || 'no-origin'}`);
+      callback(null, origin || '*');
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     exposedHeaders: ['Authorization'],

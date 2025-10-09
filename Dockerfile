@@ -2,8 +2,8 @@
 FROM node:22.17.1-alpine AS builder
 
 LABEL maintainer="QuizifyAPI"
-LABEL version="0.9.0-dev"
-LABEL description="Quizify API - NestJS Application"
+LABEL version="0.9.1-dev"
+LABEL description="Quizify API - NestJS Application with Universal CORS"
 
 WORKDIR /app
 
