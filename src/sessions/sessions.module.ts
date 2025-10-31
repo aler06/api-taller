@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Session, SessionSchema } from './model/session.model';
+import { SessionScore, SessionScoreSchema } from './model/session-score.model';
 import { SessionService } from './service/session.service';
+import { SessionScoreService } from './service/session-score.service';
 import { SessionController } from './controller/session.controller';
 import { SessionPublicController } from './controller/session-public.controller';
+import { SessionScoreController } from './controller/session-score.controller';
 import { SessionGateway } from './gateway/session.gateway';
 import { Exercise, ExerciseSchema } from '../exercise-generator/model/exercise.model';
 import { AuthModule } from '../auth/auth.module';
@@ -13,13 +16,14 @@ import { UsersModule } from '../users/users.module';
   imports: [
     MongooseModule.forFeature([
       { name: Session.name, schema: SessionSchema },
+      { name: SessionScore.name, schema: SessionScoreSchema },
       { name: Exercise.name, schema: ExerciseSchema },
     ]),
     AuthModule, // Import for authentication guards
     UsersModule, // Import for User model access
   ],
-  controllers: [SessionController, SessionPublicController],
-  providers: [SessionService, SessionGateway],
-  exports: [SessionService, SessionGateway],
+  controllers: [SessionController, SessionPublicController, SessionScoreController],
+  providers: [SessionService, SessionScoreService, SessionGateway],
+  exports: [SessionService, SessionScoreService, SessionGateway],
 })
 export class SessionsModule {}

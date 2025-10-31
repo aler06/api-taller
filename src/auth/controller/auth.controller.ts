@@ -20,6 +20,8 @@ import { LoginRequestDto } from '../dto/login-request.dto';
 import { LoginResponseDto } from '../dto/login-response.dto';
 import { RegisterRequestDto } from '../dto/register-request.dto';
 import { RegisterResponseDto } from '../dto/register-response.dto';
+import { GuestLoginRequestDto } from '../dto/guest-login-request.dto';
+import { GuestLoginResponseDto } from '../dto/guest-login-response.dto';
 import { JwtAuthGuard } from '../guard/jwt-auth.guard';
 import { LocalAuthGuard } from '../guard/local-auth.guard';
 
@@ -112,6 +114,37 @@ export class AuthController {
     })
     async register(@Body() registerDto: RegisterRequestDto): Promise<RegisterResponseDto> {
         return this.authService.register(registerDto);
+    }
+
+    @Post('guest')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Login como invitado',
+        description: 'Permite a un usuario no registrado obtener un token temporal de acceso (1 hora) para participar en sesiones',
+    })
+    @ApiBody({
+        type: GuestLoginRequestDto,
+        description: 'Datos del usuario invitado',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Token de invitado generado exitosamente',
+        type: GuestLoginResponseDto,
+    })
+    @ApiResponse({
+        status: 400,
+        description: 'Datos de entrada inválidos',
+        schema: {
+            type: 'object',
+            properties: {
+                statusCode: { type: 'number', example: 400 },
+                message: { type: 'array', items: { type: 'string' } },
+                error: { type: 'string', example: 'Bad Request' },
+            },
+        },
+    })
+    async guestLogin(@Body() guestLoginDto: GuestLoginRequestDto): Promise<GuestLoginResponseDto> {
+        return this.authService.guestLogin(guestLoginDto);
     }
 
     @Get('profile')

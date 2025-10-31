@@ -9,6 +9,9 @@ import { LoginResponseDto } from '../dto/login-response.dto';
 import { RegisterRequestDto } from '../dto/register-request.dto';
 import { RegisterResponseDto } from '../dto/register-response.dto';
 import { JwtPayloadDto } from '../dto/jwt-payload.dto';
+import { GuestLoginRequestDto } from '../dto/guest-login-request.dto';
+import { GuestLoginResponseDto } from '../dto/guest-login-response.dto';
+import { Role } from '../../users/enum/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -160,5 +163,48 @@ export class AuthService {
             }
             throw new BadRequestException('Failed to register user');
         }
+    }
+
+    /**
+     * Guest login - Genera un token JWT temporal para usuarios no registrados
+     * El token tiene una duración corta (1 hora) y permite acceso limitado
+     */
+    async guestLogin(guestLoginDto: GuestLoginRequestDto): Promise<GuestLoginResponseDto> {
+        const { nombre, correo } = guestLoginDto;
+
+        // Generar un ID temporal único para el usuario guest
+        // Usamos una combinación de timestamp y hash del nombre/correo para unicidad
+        const timestamp = Date.now();
+        const uniqueString = `${nombre}_${correo || 'no-email'}_${timestamp}`;
+        const guestId = `guest_${Buffer.from(uniqueString).toString('base64').substring(0, 20)}_${timestamp}`;
+
+        // Crear payload JWT para usuario guest
+        const payload: JwtPayloadDto = {
+            sub: guestId,
+            role: Role.STUDENT,
+            nombre: nombre,
+            correo: correo,
+            isGuest: true,
+        };
+
+        // Generar token con expiración corta (1 hora)
+        const accessToken = this.jwtService.sign(payload, {
+            expiresIn: '1h', // Token de corta duración para guests
+        });
+
+        const expiresIn = 3600; // 1 hora en segundos
+
+        return {
+            accessToken,
+            user: {
+                id: guestId,
+                nombre: nombre,
+                correo: correo,
+                role: Role.STUDENT,
+                isGuest: true,
+            },
+            tokenType: 'Bearer',
+            expiresIn,
+        };
     }
 }
