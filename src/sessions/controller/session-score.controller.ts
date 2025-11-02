@@ -10,7 +10,9 @@ import {
   HttpStatus,
   HttpCode,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -327,6 +329,59 @@ export class SessionScoreController {
   })
   async getUserScoresById(@Param('userId') userId: string): Promise<SessionScoreResponseDTO[]> {
     return this.sessionScoreService.getUserScores(userId);
+  }
+
+  @Get('session/:sessionId/export')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @ApiOperation({
+    summary: 'Export session scores to Excel',
+    description: 'Download all session scores as an Excel file. Only accessible by teachers and admins.',
+  })
+  @ApiBearerAuth()
+  @ApiParam({
+    name: 'sessionId',
+    description: 'ID of the session',
+    example: '507f1f77bcf86cd799439011',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Excel file generated successfully',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Session not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Only teachers and admins can export scores',
+  })
+  async exportSessionScores(
+    @Param('sessionId') sessionId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const buffer = await this.sessionScoreService.exportSessionScoresToExcel(sessionId);
+    
+    // Set headers for file download
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=resultados-sesion-${sessionId}-${Date.now()}.xlsx`,
+    );
+    res.setHeader('Content-Length', buffer.length);
+    
+    res.send(buffer);
   }
 
   @Delete(':scoreId')

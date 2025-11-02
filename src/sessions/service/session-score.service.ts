@@ -8,6 +8,7 @@ import { SubmitAnswerDTO } from '../dto/submit-answer.dto';
 import { CompleteSessionDTO } from '../dto/complete-session.dto';
 import { SessionScoreResponseDTO, SessionScoreSummaryDTO, AnswerDetailDTO } from '../dto/session-score-response.dto';
 import { Game } from '../../exercise-generator/enum/game.enum';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class SessionScoreService {
@@ -701,5 +702,178 @@ export class SessionScoreService {
       createdAt: score.createdAt,
       updatedAt: score.updatedAt,
     };
+  }
+
+  /**
+   * Export session scores to Excel
+   */
+  async exportSessionScoresToExcel(sessionId: string): Promise<Buffer> {
+    const session = await this.sessionModel.findById(sessionId);
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const scores = await this.sessionScoreModel
+      .find({ sessionId: new Types.ObjectId(sessionId) })
+      .sort({ puntajeFinal: -1, tiempoTotal: 1 });
+
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Resultados de Sesión');
+
+    // Set column widths
+    worksheet.columns = [
+      { header: 'Posición', key: 'position', width: 12 },
+      { header: 'Estudiante', key: 'student', width: 25 },
+      { header: 'Correo', key: 'email', width: 35 },
+      { header: 'Puntaje Final', key: 'score', width: 15 },
+      { header: 'Tiempo Total', key: 'time', width: 15 },
+      { header: 'Respuestas', key: 'answers', width: 15 },
+      { header: 'Estado', key: 'status', width: 15 },
+      { header: 'Fecha', key: 'date', width: 20 },
+    ];
+
+    // Style header row
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' },
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    headerRow.height = 25;
+
+    // Add data rows
+    scores.forEach((score, index) => {
+      const totalAnswers = score.respuestas.size;
+      const correctAnswers = Array.from(score.respuestas.values()).filter(
+        (r: any) => r.isCorrect
+      ).length;
+      const percentage = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+
+      // Format time (seconds to MM:SS)
+      const minutes = Math.floor(score.tiempoTotal / 60);
+      const seconds = score.tiempoTotal % 60;
+      const timeFormatted = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+      // Format date
+      const dateFormatted = score.fechaResolucion
+        ? new Date(score.fechaResolucion).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : 'N/A';
+
+      const row = worksheet.addRow({
+        position: `#${index + 1}`,
+        student: score.nombre || 'Usuario Anónimo',
+        email: score.correo || 'N/A',
+        score: `${score.puntajeFinal.toFixed(1)} puntos`,
+        time: timeFormatted,
+        answers: `${correctAnswers}/${totalAnswers} (${percentage}%)`,
+        status: score.completado ? 'Completado' : 'Incompleto',
+        date: dateFormatted,
+      });
+
+      // Alternate row colors
+      if (index % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF2F2F2' },
+        };
+      }
+
+      // Center align all cells
+      row.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Color code status
+      const statusCell = row.getCell('status');
+      if (score.completado) {
+        statusCell.font = { color: { argb: 'FF00B050' }, bold: true };
+      } else {
+        statusCell.font = { color: { argb: 'FFFF0000' }, bold: true };
+      }
+
+      // Highlight top 3 positions
+      if (index < 3) {
+        const positionCell = row.getCell('position');
+        positionCell.font = { bold: true, size: 12 };
+        if (index === 0) {
+          positionCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFD700' }, // Gold
+          };
+        } else if (index === 1) {
+          positionCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFC0C0C0' }, // Silver
+          };
+        } else if (index === 2) {
+          positionCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFCD7F32' }, // Bronze
+          };
+        }
+      }
+    });
+
+    // Add summary section
+    const summaryStartRow = scores.length + 3;
+    worksheet.mergeCells(`A${summaryStartRow}:H${summaryStartRow}`);
+    const summaryTitleCell = worksheet.getCell(`A${summaryStartRow}`);
+    summaryTitleCell.value = 'RESUMEN DE LA SESIÓN';
+    summaryTitleCell.font = { bold: true, size: 14 };
+    summaryTitleCell.alignment = { horizontal: 'center' };
+    summaryTitleCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' },
+    };
+
+    const completedScores = scores.filter(s => s.completado);
+    const totalScore = completedScores.reduce((sum, s) => sum + s.puntajeFinal, 0);
+    const averageScore = completedScores.length > 0 ? totalScore / completedScores.length : 0;
+    const highestScore = scores.length > 0 ? Math.max(...scores.map(s => s.puntajeFinal)) : 0;
+    const lowestScore = scores.length > 0 ? Math.min(...scores.map(s => s.puntajeFinal)) : 0;
+
+    const summaryData = [
+      ['Nombre de la Sesión:', session.name],
+      ['Total de Participantes:', scores.length],
+      ['Completaron:', completedScores.length],
+      ['Puntaje Promedio:', `${averageScore.toFixed(2)} puntos`],
+      ['Puntaje Más Alto:', `${highestScore.toFixed(2)} puntos`],
+      ['Puntaje Más Bajo:', `${lowestScore.toFixed(2)} puntos`],
+    ];
+
+    summaryData.forEach((data, index) => {
+      const row = worksheet.addRow([data[0], data[1]]);
+      row.getCell(1).font = { bold: true };
+      row.getCell(1).alignment = { horizontal: 'right' };
+      row.getCell(2).alignment = { horizontal: 'left' };
+    });
+
+    // Add borders to all cells with data
+    worksheet.eachRow({ includeEmpty: false }, (row) => {
+      row.eachCell({ includeEmpty: false }, (cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+    });
+
+    // Generate buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 }
