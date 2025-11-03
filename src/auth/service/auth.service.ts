@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -15,196 +21,206 @@ import { Role } from '../../users/enum/role.enum';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        @InjectModel(User.name) private userModel: Model<User>,
-        private jwtService: JwtService,
-    ) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private jwtService: JwtService,
+  ) {}
 
-    async validateUser(email: string, password: string): Promise<any> {
-        const user = await this.userModel.findOne({ email }).select('+password');
-        
-        if (!user) {
-            return null;
-        }
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.userModel.findOne({ email }).select('+password');
 
-        if (!user.isActive) {
-            throw new UnauthorizedException('Usuario inactivo. Contacta al administrador.');
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        
-        if (!isPasswordValid) {
-            return null;
-        }
-
-        // Retornar usuario sin la contraseña
-        const { password: userPassword, ...result } = user.toObject();
-        return result;
+    if (!user) {
+      return null;
     }
 
-    async login(loginDto: LoginRequestDto): Promise<LoginResponseDto> {
-        const user = await this.validateUser(loginDto.email, loginDto.password);
-        
-        if (!user) {
-            throw new UnauthorizedException('Credenciales inválidas');
-        }
-
-        const payload: JwtPayloadDto = {
-            sub: (user as any)._id.toString(),
-            email: user.email,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
-        };
-
-        const accessToken = this.jwtService.sign(payload);
-        const expiresIn = 3600; // 1 hora en segundos
-
-        return {
-            accessToken,
-            user: {
-                id: (user as any)._id.toString(),
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                role: user.role,
-                isActive: user.isActive,
-            },
-            tokenType: 'Bearer',
-            expiresIn,
-        };
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        'Usuario inactivo. Contacta al administrador.',
+      );
     }
 
-    async getUserFromToken(userId: string): Promise<User> {
-        const user = await this.userModel.findById(userId).select('-password');
-        
-        if (!user) {
-            throw new NotFoundException('Usuario no encontrado');
-        }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        if (!user.isActive) {
-            throw new UnauthorizedException('Usuario inactivo');
-        }
-
-        return user;
+    if (!isPasswordValid) {
+      return null;
     }
 
-    async refreshToken(userId: string): Promise<{ accessToken: string; expiresIn: number }> {
-        const user = await this.getUserFromToken(userId);
+    // Retornar usuario sin la contraseña
+    const { password: userPassword, ...result } = user.toObject();
+    return result;
+  }
 
-        const payload: JwtPayloadDto = {
-            sub: (user as any)._id.toString(),
-            email: user.email,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
-        };
+  async login(loginDto: LoginRequestDto): Promise<LoginResponseDto> {
+    const user = await this.validateUser(loginDto.email, loginDto.password);
 
-        const accessToken = this.jwtService.sign(payload);
-        const expiresIn = 3600; // 1 hora en segundos
-
-        return {
-            accessToken,
-            expiresIn,
-        };
+    if (!user) {
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    async register(registerDto: RegisterRequestDto): Promise<RegisterResponseDto> {
-        try {
-            // Verificar si el usuario ya existe
-            const existingUser = await this.userModel.findOne({ email: registerDto.email });
-            if (existingUser) {
-                throw new ConflictException('User with this email already exists');
-            }
+    const payload: JwtPayloadDto = {
+      sub: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
 
-            // Hashear la contraseña
-            const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+    const accessToken = this.jwtService.sign(payload);
+    const expiresIn = 3600; // 1 hora en segundos
 
-            // Crear nuevo usuario
-            const newUser = new this.userModel({
-                firstName: registerDto.firstName,
-                lastName: registerDto.lastName,
-                email: registerDto.email,
-                role: registerDto.role,
-                password: hashedPassword,
-                isActive: true, // Activar automáticamente al registrarse
-            });
+    return {
+      accessToken,
+      user: {
+        id: user._id.toString(),
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+      },
+      tokenType: 'Bearer',
+      expiresIn,
+    };
+  }
 
-            const savedUser = await newUser.save();
+  async getUserFromToken(userId: string): Promise<User> {
+    const user = await this.userModel.findById(userId).select('-password');
 
-            // Generar token JWT
-            const payload: JwtPayloadDto = {
-                sub: (savedUser as any)._id.toString(),
-                email: savedUser.email,
-                role: savedUser.role,
-                firstName: savedUser.firstName,
-                lastName: savedUser.lastName,
-            };
-
-            const accessToken = this.jwtService.sign(payload);
-            const expiresIn = 3600; // 1 hora en segundos
-
-            return {
-                accessToken,
-                user: {
-                    id: (savedUser as any)._id.toString(),
-                    firstName: savedUser.firstName,
-                    lastName: savedUser.lastName,
-                    email: savedUser.email,
-                    role: savedUser.role,
-                    isActive: savedUser.isActive,
-                },
-                tokenType: 'Bearer',
-                expiresIn,
-            };
-        } catch (error) {
-            if (error instanceof ConflictException) {
-                throw error;
-            }
-            throw new BadRequestException('Failed to register user');
-        }
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
     }
 
-    /**
-     * Guest login - Genera un token JWT temporal para usuarios no registrados
-     * El token tiene una duración corta (1 hora) y permite acceso limitado
-     */
-    async guestLogin(guestLoginDto: GuestLoginRequestDto): Promise<GuestLoginResponseDto> {
-        const { nombre, correo } = guestLoginDto;
-
-        // Generar un ID temporal único para el usuario guest
-        // Usamos una combinación de timestamp y hash del nombre/correo para unicidad
-        const timestamp = Date.now();
-        const uniqueString = `${nombre}_${correo || 'no-email'}_${timestamp}`;
-        const guestId = `guest_${Buffer.from(uniqueString).toString('base64').substring(0, 20)}_${timestamp}`;
-
-        // Crear payload JWT para usuario guest
-        const payload: JwtPayloadDto = {
-            sub: guestId,
-            role: Role.STUDENT,
-            nombre: nombre,
-            correo: correo,
-            isGuest: true,
-        };
-
-        // Generar token con expiración corta (1 hora)
-        const accessToken = this.jwtService.sign(payload, {
-            expiresIn: '1h', // Token de corta duración para guests
-        });
-
-        const expiresIn = 3600; // 1 hora en segundos
-
-        return {
-            accessToken,
-            user: {
-                id: guestId,
-                nombre: nombre,
-                correo: correo,
-                role: Role.STUDENT,
-                isGuest: true,
-            },
-            tokenType: 'Bearer',
-            expiresIn,
-        };
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuario inactivo');
     }
+
+    return user;
+  }
+
+  async refreshToken(
+    userId: string,
+  ): Promise<{ accessToken: string; expiresIn: number }> {
+    const user = await this.getUserFromToken(userId);
+
+    const payload: JwtPayloadDto = {
+      sub: (user as any)._id.toString(),
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+    const expiresIn = 3600; // 1 hora en segundos
+
+    return {
+      accessToken,
+      expiresIn,
+    };
+  }
+
+  async register(
+    registerDto: RegisterRequestDto,
+  ): Promise<RegisterResponseDto> {
+    try {
+      // Verificar si el usuario ya existe
+      const existingUser = await this.userModel.findOne({
+        email: registerDto.email,
+      });
+      if (existingUser) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      // Hashear la contraseña
+      const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+      // Crear nuevo usuario
+      const newUser = new this.userModel({
+        firstName: registerDto.firstName,
+        lastName: registerDto.lastName,
+        email: registerDto.email,
+        role: registerDto.role,
+        password: hashedPassword,
+        isActive: true, // Activar automáticamente al registrarse
+      });
+
+      const savedUser = await newUser.save();
+
+      // Generar token JWT
+      const payload: JwtPayloadDto = {
+        sub: (savedUser as any)._id.toString(),
+        email: savedUser.email,
+        role: savedUser.role,
+        firstName: savedUser.firstName,
+        lastName: savedUser.lastName,
+      };
+
+      const accessToken = this.jwtService.sign(payload);
+      const expiresIn = 3600; // 1 hora en segundos
+
+      return {
+        accessToken,
+        user: {
+          id: (savedUser as any)._id.toString(),
+          firstName: savedUser.firstName,
+          lastName: savedUser.lastName,
+          email: savedUser.email,
+          role: savedUser.role,
+          isActive: savedUser.isActive,
+        },
+        tokenType: 'Bearer',
+        expiresIn,
+      };
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to register user');
+    }
+  }
+
+  /**
+   * Guest login - Genera un token JWT temporal para usuarios no registrados
+   * El token tiene una duración corta (1 hora) y permite acceso limitado
+   */
+  async guestLogin(
+    guestLoginDto: GuestLoginRequestDto,
+  ): Promise<GuestLoginResponseDto> {
+    const { nombre, correo } = guestLoginDto;
+
+    // Generar un ID temporal único para el usuario guest
+    // Usamos una combinación de timestamp y hash del nombre/correo para unicidad
+    const timestamp = Date.now();
+    const uniqueString = `${nombre}_${correo || 'no-email'}_${timestamp}`;
+    const guestId = `guest_${Buffer.from(uniqueString).toString('base64').substring(0, 20)}_${timestamp}`;
+
+    // Crear payload JWT para usuario guest
+    const payload: JwtPayloadDto = {
+      sub: guestId,
+      role: Role.STUDENT,
+      nombre: nombre,
+      correo: correo,
+      isGuest: true,
+    };
+
+    // Generar token con expiración corta (1 hora)
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '1h', // Token de corta duración para guests
+    });
+
+    const expiresIn = 3600; // 1 hora en segundos
+
+    return {
+      accessToken,
+      user: {
+        id: guestId,
+        nombre: nombre,
+        correo: correo,
+        role: Role.STUDENT,
+        isGuest: true,
+      },
+      tokenType: 'Bearer',
+      expiresIn,
+    };
+  }
 }

@@ -1,15 +1,25 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, MinLength, MaxLength, IsMongoId } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  IsMongoId,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApiSchema } from '@nestjs/swagger';
 import { Game } from '../enum/game.enum';
 
-@ApiSchema({ name: 'ExerciseRequestDTO', description: 'Exercise generation request DTO' })
+@ApiSchema({
+  name: 'ExerciseRequestDTO',
+  description: 'Exercise generation request DTO',
+})
 export class ExerciseRequestDTO {
-
   @ApiProperty({
     description: 'ID of the user creating the exercise',
     example: '507f1f77bcf86cd799439011',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'User ID is required' })
@@ -20,7 +30,7 @@ export class ExerciseRequestDTO {
     description: 'Topic for the educational session that will be generated',
     example: 'Geografía de Europa',
     minLength: 3,
-    maxLength: 200
+    maxLength: 200,
   })
   @IsString()
   @IsNotEmpty({ message: 'Topic is required' })
@@ -29,11 +39,15 @@ export class ExerciseRequestDTO {
   topic: string;
 
   @ApiProperty({
-    description: 'Type of interactive game to generate for the educational session',
+    description:
+      'Type of interactive game to generate for the educational session',
     example: 'quiz',
-    enum: Game
+    enum: Game,
   })
-  @IsEnum(Game, { message: 'Game type must be one of: quiz, hangman, fill_in_the_blank, flip_cards, drag_and_drop, true_or_false, roulette, matching' })
+  @IsEnum(Game, {
+    message:
+      'Game type must be one of: quiz, hangman, fill_in_the_blank, flip_cards, drag_and_drop, true_or_false, roulette, matching',
+  })
   @IsNotEmpty({ message: 'Game type is required' })
   gameType: Game;
 
@@ -41,11 +55,11 @@ export class ExerciseRequestDTO {
     description: 'Difficulty level for the educational content and game',
     example: 'intermediate',
     enum: ['beginner', 'intermediate', 'advanced'],
-    required: false
+    required: false,
   })
   @IsOptional()
-  @IsEnum(['beginner', 'intermediate', 'advanced'], { 
-    message: 'Difficulty must be one of: beginner, intermediate, advanced' 
+  @IsEnum(['beginner', 'intermediate', 'advanced'], {
+    message: 'Difficulty must be one of: beginner, intermediate, advanced',
   })
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
 
@@ -53,7 +67,7 @@ export class ExerciseRequestDTO {
     description: 'Target audience for the educational session',
     example: 'university students',
     required: false,
-    maxLength: 100
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
@@ -61,24 +75,27 @@ export class ExerciseRequestDTO {
   targetAudience?: string;
 
   @ApiProperty({
-    description: 'Additional instructions or specific requirements for the session',
+    description:
+      'Additional instructions or specific requirements for the session',
     example: 'Focus on European capitals and include historical context',
     required: false,
-    maxLength: 500
+    maxLength: 500,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(500, { message: 'Additional instructions must not exceed 500 characters' })
+  @MaxLength(500, {
+    message: 'Additional instructions must not exceed 500 characters',
+  })
   additionalInstructions?: string;
 
   @ApiProperty({
-    description: 'Number of questions/items to generate for the game (for quiz, number of questions; for hangman, number of words)',
+    description:
+      'Number of questions/items to generate for the game (for quiz, number of questions; for hangman, number of words)',
     example: 5,
     minimum: 1,
     maximum: 20,
-    required: false
+    required: false,
   })
   @IsOptional()
   numberOfItems?: number;
-
 }

@@ -1,13 +1,30 @@
-import { IsString, IsNotEmpty, IsMongoId, IsOptional, IsNumber, IsBoolean, Min, Max, MinLength, MaxLength, IsArray, ArrayMinSize, ArrayMaxSize } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsMongoId,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApiSchema } from '@nestjs/swagger';
 
-@ApiSchema({ name: 'CreateSessionRequestDTO', description: 'Create session request DTO' })
+@ApiSchema({
+  name: 'CreateSessionRequestDTO',
+  description: 'Create session request DTO',
+})
 export class CreateSessionRequestDTO {
   @ApiProperty({
     description: 'ID of the teacher creating the session',
     example: '507f1f77bcf86cd799439011',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'Teacher ID is required' })
@@ -20,19 +37,22 @@ export class CreateSessionRequestDTO {
     type: [String],
     required: true,
     minItems: 1,
-    maxItems: 10
+    maxItems: 10,
   })
   @IsArray()
   @ArrayMinSize(1, { message: 'At least one exercise is required' })
   @ArrayMaxSize(10, { message: 'Maximum 10 exercises allowed per session' })
-  @IsMongoId({ each: true, message: 'Each exercise ID must be a valid MongoDB ObjectId' })
+  @IsMongoId({
+    each: true,
+    message: 'Each exercise ID must be a valid MongoDB ObjectId',
+  })
   exerciseIds: string[];
 
   @ApiProperty({
     description: 'Name of the session',
     example: 'Geografia de Europa - Sesión 1',
     minLength: 3,
-    maxLength: 100
+    maxLength: 100,
   })
   @IsString()
   @IsNotEmpty({ message: 'Session name is required' })
@@ -44,18 +64,20 @@ export class CreateSessionRequestDTO {
     description: 'Description of the session',
     example: 'Sesión interactiva sobre la geografía europea',
     required: false,
-    maxLength: 500
+    maxLength: 500,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(500, { message: 'Session description must not exceed 500 characters' })
+  @MaxLength(500, {
+    message: 'Session description must not exceed 500 characters',
+  })
   description?: string;
 
   @ApiProperty({
     description: 'Duration of the session in minutes',
     example: 30,
     minimum: 5,
-    maximum: 180
+    maximum: 180,
   })
   @IsNumber({}, { message: 'Duration must be a number' })
   @Min(5, { message: 'Session duration must be at least 5 minutes' })
@@ -67,7 +89,7 @@ export class CreateSessionRequestDTO {
     example: 30,
     minimum: 1,
     maximum: 100,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber({}, { message: 'Max participants must be a number' })
@@ -76,9 +98,10 @@ export class CreateSessionRequestDTO {
   maxParticipants?: number;
 
   @ApiProperty({
-    description: 'Whether to allow students to join after the session has started',
+    description:
+      'Whether to allow students to join after the session has started',
     example: true,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsBoolean()
@@ -87,7 +110,7 @@ export class CreateSessionRequestDTO {
   @ApiProperty({
     description: 'Whether to show leaderboard during and after the session',
     example: true,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsBoolean()

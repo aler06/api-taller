@@ -33,7 +33,10 @@ export class SessionScoreResponseDTO {
   @ApiProperty({ description: 'User ID (if registered)', required: false })
   userId?: string;
 
-  @ApiProperty({ description: 'Student name (if not registered)', required: false })
+  @ApiProperty({
+    description: 'Student name (if not registered)',
+    required: false,
+  })
   nombre?: string;
 
   @ApiProperty({ description: 'Student email', required: false })
@@ -45,16 +48,19 @@ export class SessionScoreResponseDTO {
   @ApiProperty({ description: 'Total time spent in seconds', example: 300 })
   tiempoTotal: number;
 
-  @ApiProperty({ description: 'Date when the session was completed', required: false })
+  @ApiProperty({
+    description: 'Date when the session was completed',
+    required: false,
+  })
   fechaResolucion?: Date;
 
   @ApiProperty({ description: 'Whether the student completed the session' })
   completado: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Detailed answers',
     type: [AnswerDetailDTO],
-    required: false 
+    required: false,
   })
   respuestas?: AnswerDetailDTO[];
 
@@ -87,6 +93,9 @@ export class SessionScoreSummaryDTO {
   @ApiProperty({ description: 'Lowest score' })
   lowestScore: number;
 
-  @ApiProperty({ description: 'List of all scores', type: [SessionScoreResponseDTO] })
+  @ApiProperty({
+    description: 'List of all scores',
+    type: [SessionScoreResponseDTO],
+  })
   scores: SessionScoreResponseDTO[];
 }

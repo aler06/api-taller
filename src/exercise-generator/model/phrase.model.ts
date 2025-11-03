@@ -5,8 +5,8 @@ export type PhraseDocument = Phrase & Document;
 
 @Schema()
 export class Phrase {
-    @Prop({ required: true })
-    text: string;
+  @Prop({ required: true })
+  text: string;
 }
 
 export const PhraseSchema = SchemaFactory.createForClass(Phrase);

@@ -8,12 +8,14 @@ import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    ConfigModule, 
-    MongooseModule.forFeature([{ name: Exercise.name, schema: ExerciseSchema }]),
-    UsersModule
+    ConfigModule,
+    MongooseModule.forFeature([
+      { name: Exercise.name, schema: ExerciseSchema },
+    ]),
+    UsersModule,
   ],
   providers: [ExerciseGeneratorService],
   exports: [ExerciseGeneratorService],
-  controllers: [ExerciseGeneratorController]
+  controllers: [ExerciseGeneratorController],
 })
 export class ExerciseGeneratorModule {}

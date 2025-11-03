@@ -8,7 +8,10 @@ import { SessionController } from './controller/session.controller';
 import { SessionPublicController } from './controller/session-public.controller';
 import { SessionScoreController } from './controller/session-score.controller';
 import { SessionGateway } from './gateway/session.gateway';
-import { Exercise, ExerciseSchema } from '../exercise-generator/model/exercise.model';
+import {
+  Exercise,
+  ExerciseSchema,
+} from '../exercise-generator/model/exercise.model';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 
@@ -22,7 +25,11 @@ import { UsersModule } from '../users/users.module';
     AuthModule, // Import for authentication guards
     UsersModule, // Import for User model access
   ],
-  controllers: [SessionController, SessionPublicController, SessionScoreController],
+  controllers: [
+    SessionController,
+    SessionPublicController,
+    SessionScoreController,
+  ],
   providers: [SessionService, SessionScoreService, SessionGateway],
   exports: [SessionService, SessionScoreService, SessionGateway],
 })

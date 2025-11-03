@@ -5,11 +5,11 @@ export type PairDocument = Pair & Document;
 
 @Schema()
 export class Pair {
-    @Prop({ required: true })
-    term: string;
+  @Prop({ required: true })
+  term: string;
 
-    @Prop({ required: true })
-    match: string;
+  @Prop({ required: true })
+  match: string;
 }
 
 export const PairSchema = SchemaFactory.createForClass(Pair);

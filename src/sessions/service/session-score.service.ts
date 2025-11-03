@@ -1,12 +1,27 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { SessionScore, SessionScoreDocument } from '../model/session-score.model';
+import {
+  SessionScore,
+  SessionScoreDocument,
+} from '../model/session-score.model';
 import { Session, SessionDocument } from '../model/session.model';
-import { Exercise, ExerciseDocument } from '../../exercise-generator/model/exercise.model';
+import {
+  Exercise,
+  ExerciseDocument,
+} from '../../exercise-generator/model/exercise.model';
 import { SubmitAnswerDTO } from '../dto/submit-answer.dto';
 import { CompleteSessionDTO } from '../dto/complete-session.dto';
-import { SessionScoreResponseDTO, SessionScoreSummaryDTO, AnswerDetailDTO } from '../dto/session-score-response.dto';
+import {
+  SessionScoreResponseDTO,
+  SessionScoreSummaryDTO,
+  AnswerDetailDTO,
+} from '../dto/session-score-response.dto';
 import { Game } from '../../exercise-generator/enum/game.enum';
 import * as ExcelJS from 'exceljs';
 
@@ -16,7 +31,8 @@ export class SessionScoreService {
   private readonly NON_SCORING_GAMES = [Game.ROULETTE, Game.FLIP_CARDS];
 
   constructor(
-    @InjectModel(SessionScore.name) private sessionScoreModel: Model<SessionScoreDocument>,
+    @InjectModel(SessionScore.name)
+    private sessionScoreModel: Model<SessionScoreDocument>,
     @InjectModel(Session.name) private sessionModel: Model<SessionDocument>,
     @InjectModel(Exercise.name) private exerciseModel: Model<ExerciseDocument>,
   ) {}
@@ -78,14 +94,22 @@ export class SessionScoreService {
   async submitAnswer(
     submitAnswerDto: SubmitAnswerDTO,
     userId?: string,
-  ): Promise<{ 
-    scoreRecord: SessionScoreResponseDTO; 
-    isCorrect: boolean; 
-    points: number; 
+  ): Promise<{
+    scoreRecord: SessionScoreResponseDTO;
+    isCorrect: boolean;
+    points: number;
     correctAnswer?: string;
     explanation?: string;
   }> {
-    const { sessionId, exerciseId, questionId, answer, timeSpent, nombre, correo } = submitAnswerDto;
+    const {
+      sessionId,
+      exerciseId,
+      questionId,
+      answer,
+      timeSpent,
+      nombre,
+      correo,
+    } = submitAnswerDto;
 
     // 🟢 LOG: Inicio de submit answer
     console.log('📝 Submit Answer:', {
@@ -100,7 +124,9 @@ export class SessionScoreService {
     });
 
     // Validate session
-    const session = await this.sessionModel.findById(sessionId).populate('exerciseIds');
+    const session = await this.sessionModel
+      .findById(sessionId)
+      .populate('exerciseIds');
     if (!session) {
       throw new NotFoundException('Session not found');
     }
@@ -114,7 +140,7 @@ export class SessionScoreService {
     console.log('🎮 Exercise type:', exercise.game);
 
     const exerciseInSession = (session.exerciseIds as any[]).find(
-      ex => ex._id.toString() === exerciseId
+      (ex) => ex._id.toString() === exerciseId,
     );
     if (!exerciseInSession) {
       throw new BadRequestException('Exercise does not belong to this session');
@@ -122,11 +148,18 @@ export class SessionScoreService {
 
     // Check if exercise type should be scored
     if (this.NON_SCORING_GAMES.includes(exercise.game)) {
-      throw new BadRequestException(`Exercise type ${exercise.game} is not scored`);
+      throw new BadRequestException(
+        `Exercise type ${exercise.game} is not scored`,
+      );
     }
 
     // Find or create score record
-    let scoreRecord = await this.findOrCreateScoreRecord(sessionId, userId, nombre, correo);
+    const scoreRecord = await this.findOrCreateScoreRecord(
+      sessionId,
+      userId,
+      nombre,
+      correo,
+    );
 
     console.log('📌 Score record BEFORE evaluation:', {
       id: scoreRecord._id,
@@ -135,12 +168,8 @@ export class SessionScoreService {
     });
 
     // Validate question and calculate score
-    const { isCorrect, points, correctAnswer, explanation } = await this.evaluateAnswer(
-      exercise,
-      questionId,
-      answer,
-      timeSpent,
-    );
+    const { isCorrect, points, correctAnswer, explanation } =
+      await this.evaluateAnswer(exercise, questionId, answer, timeSpent);
 
     // 🟢 LOG: Resultado de evaluación
     console.log('✅ Answer evaluated:', {
@@ -151,12 +180,14 @@ export class SessionScoreService {
     });
 
     // Get total scoreable questions in session
-    const totalScoreableQuestions = await this.getTotalScoreableQuestions(session);
+    const totalScoreableQuestions =
+      await this.getTotalScoreableQuestions(session);
 
     // Calculate points per question
-    const pointsPerQuestion = totalScoreableQuestions > 0 
-      ? this.MAX_SCORE / totalScoreableQuestions 
-      : 0;
+    const pointsPerQuestion =
+      totalScoreableQuestions > 0
+        ? this.MAX_SCORE / totalScoreableQuestions
+        : 0;
 
     // Adjust points to fit within max score
     // Para ejercicios con puntuación parcial (matching, drag-and-drop, quiz múltiple)
@@ -175,8 +206,16 @@ export class SessionScoreService {
     const existingAnswer = scoreRecord.respuestas.get(answerKey);
 
     console.log('🔑 Answer key:', answerKey);
-    console.log('📝 Existing answer:', existingAnswer ? { points: existingAnswer.points, isCorrect: existingAnswer.isCorrect } : 'NONE');
-    console.log('💯 Current puntajeFinal BEFORE update:', scoreRecord.puntajeFinal);
+    console.log(
+      '📝 Existing answer:',
+      existingAnswer
+        ? { points: existingAnswer.points, isCorrect: existingAnswer.isCorrect }
+        : 'NONE',
+    );
+    console.log(
+      '💯 Current puntajeFinal BEFORE update:',
+      scoreRecord.puntajeFinal,
+    );
 
     // Only add points if this is a new answer or better than previous
     if (!existingAnswer) {
@@ -184,23 +223,32 @@ export class SessionScoreService {
       const previousScore = scoreRecord.puntajeFinal;
       scoreRecord.puntajeFinal = Math.min(
         scoreRecord.puntajeFinal + adjustedPoints,
-        this.MAX_SCORE
+        this.MAX_SCORE,
       );
-      console.log(`➕ New answer - added points: ${adjustedPoints.toFixed(2)} (${previousScore.toFixed(2)} → ${scoreRecord.puntajeFinal.toFixed(2)})`);
+      console.log(
+        `➕ New answer - added points: ${adjustedPoints.toFixed(2)} (${previousScore.toFixed(2)} → ${scoreRecord.puntajeFinal.toFixed(2)})`,
+      );
     } else if (adjustedPoints > existingAnswer.points) {
       // Respuesta mejorada - reemplazar puntos (soporta puntuación parcial)
       const pointsDifference = adjustedPoints - existingAnswer.points;
       const previousScore = scoreRecord.puntajeFinal;
       scoreRecord.puntajeFinal = Math.min(
         scoreRecord.puntajeFinal + pointsDifference,
-        this.MAX_SCORE
+        this.MAX_SCORE,
       );
-      console.log(`🔄 Improved answer - points difference: ${pointsDifference.toFixed(2)} (${previousScore.toFixed(2)} → ${scoreRecord.puntajeFinal.toFixed(2)})`);
+      console.log(
+        `🔄 Improved answer - points difference: ${pointsDifference.toFixed(2)} (${previousScore.toFixed(2)} → ${scoreRecord.puntajeFinal.toFixed(2)})`,
+      );
     } else {
-      console.log(`⏭️  Answer not improved - keeping previous score: ${scoreRecord.puntajeFinal.toFixed(2)}`);
+      console.log(
+        `⏭️  Answer not improved - keeping previous score: ${scoreRecord.puntajeFinal.toFixed(2)}`,
+      );
     }
 
-    console.log('💯 Current puntajeFinal AFTER update:', scoreRecord.puntajeFinal);
+    console.log(
+      '💯 Current puntajeFinal AFTER update:',
+      scoreRecord.puntajeFinal,
+    );
 
     // Store answer details
     scoreRecord.respuestas.set(answerKey, {
@@ -233,7 +281,7 @@ export class SessionScoreService {
 
     // Reload from database to ensure we have the most recent state
     const reloadedScore = await this.sessionScoreModel.findById(savedScore._id);
-    
+
     if (!reloadedScore) {
       throw new NotFoundException('Score record not found after save');
     }
@@ -261,7 +309,8 @@ export class SessionScoreService {
     completeSessionDto: CompleteSessionDTO,
     userId?: string,
   ): Promise<SessionScoreResponseDTO> {
-    const { sessionId, nombre, correo, puntajeFinal, tiempoTotal, respuestas } = completeSessionDto;
+    const { sessionId, nombre, correo, puntajeFinal, tiempoTotal, respuestas } =
+      completeSessionDto;
 
     console.log('📝 Complete Session Request:', {
       sessionId,
@@ -273,26 +322,36 @@ export class SessionScoreService {
     });
 
     // Find or create score record
-    let scoreRecord = await this.findOrCreateScoreRecord(sessionId, userId, nombre, correo);
+    const scoreRecord = await this.findOrCreateScoreRecord(
+      sessionId,
+      userId,
+      nombre,
+      correo,
+    );
 
     // If final results are provided, use them directly
-    if (puntajeFinal !== undefined && tiempoTotal !== undefined && respuestas && respuestas.length > 0) {
+    if (
+      puntajeFinal !== undefined &&
+      tiempoTotal !== undefined &&
+      respuestas &&
+      respuestas.length > 0
+    ) {
       console.log('✅ Using final results from frontend');
-      
+
       // Set final score and time
       scoreRecord.puntajeFinal = Math.min(puntajeFinal, this.MAX_SCORE);
       scoreRecord.tiempoTotal = tiempoTotal;
-      
+
       // Convert array to Map for respuestas
       const respuestasMap = new Map();
-      
-      respuestas.forEach(resp => {
+
+      respuestas.forEach((resp) => {
         const key = `${resp.exerciseId}_${resp.questionId}`;
-        
+
         // Calculate points per answer (distribute MAX_SCORE across all answers)
         const pointsPerAnswer = this.MAX_SCORE / respuestas.length;
         const points = resp.isCorrect ? pointsPerAnswer : 0;
-        
+
         respuestasMap.set(key, {
           exerciseId: resp.exerciseId,
           questionId: resp.questionId,
@@ -303,9 +362,9 @@ export class SessionScoreService {
           timestamp: new Date(),
         });
       });
-      
+
       scoreRecord.respuestas = respuestasMap;
-      
+
       console.log('💾 Saving score record:', {
         puntajeFinal: scoreRecord.puntajeFinal,
         tiempoTotal: scoreRecord.tiempoTotal,
@@ -320,7 +379,7 @@ export class SessionScoreService {
     scoreRecord.fechaResolucion = new Date();
 
     const savedScore = await scoreRecord.save();
-    
+
     console.log('✅ Session completed successfully:', {
       id: savedScore._id,
       puntajeFinal: savedScore.puntajeFinal,
@@ -372,13 +431,21 @@ export class SessionScoreService {
       .find({ sessionId: new Types.ObjectId(sessionId) })
       .sort({ puntajeFinal: -1, tiempoTotal: 1 });
 
-    const scoreResponses = scores.map(score => this.mapToScoreResponse(score));
+    const scoreResponses = scores.map((score) =>
+      this.mapToScoreResponse(score),
+    );
 
-    const completedScores = scores.filter(s => s.completado);
-    const totalScore = completedScores.reduce((sum, s) => sum + s.puntajeFinal, 0);
-    const averageScore = completedScores.length > 0 ? totalScore / completedScores.length : 0;
-    const highestScore = scores.length > 0 ? Math.max(...scores.map(s => s.puntajeFinal)) : 0;
-    const lowestScore = scores.length > 0 ? Math.min(...scores.map(s => s.puntajeFinal)) : 0;
+    const completedScores = scores.filter((s) => s.completado);
+    const totalScore = completedScores.reduce(
+      (sum, s) => sum + s.puntajeFinal,
+      0,
+    );
+    const averageScore =
+      completedScores.length > 0 ? totalScore / completedScores.length : 0;
+    const highestScore =
+      scores.length > 0 ? Math.max(...scores.map((s) => s.puntajeFinal)) : 0;
+    const lowestScore =
+      scores.length > 0 ? Math.min(...scores.map((s) => s.puntajeFinal)) : 0;
 
     return {
       sessionId: session._id.toString(),
@@ -400,7 +467,7 @@ export class SessionScoreService {
       .find({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 });
 
-    return scores.map(score => this.mapToScoreResponse(score));
+    return scores.map((score) => this.mapToScoreResponse(score));
   }
 
   /**
@@ -423,30 +490,58 @@ export class SessionScoreService {
   ): Promise<SessionScoreDocument> {
     let scoreRecord: SessionScoreDocument | null = null;
 
-    console.log('🔍 Finding score record:', { sessionId, userId, nombre, correo });
+    console.log('🔍 Finding score record:', {
+      sessionId,
+      userId,
+      nombre,
+      correo,
+    });
 
     if (userId) {
       scoreRecord = await this.sessionScoreModel.findOne({
         sessionId: new Types.ObjectId(sessionId),
         userId: new Types.ObjectId(userId),
       });
-      console.log('📋 Found by userId:', scoreRecord ? `ID: ${scoreRecord._id}, Score: ${scoreRecord.puntajeFinal}` : 'NOT FOUND');
+      console.log(
+        '📋 Found by userId:',
+        scoreRecord
+          ? `ID: ${scoreRecord._id}, Score: ${scoreRecord.puntajeFinal}`
+          : 'NOT FOUND',
+      );
     } else if (correo) {
       scoreRecord = await this.sessionScoreModel.findOne({
         sessionId: new Types.ObjectId(sessionId),
         correo: correo,
       });
-      console.log('📋 Found by correo:', scoreRecord ? `ID: ${scoreRecord._id}, Score: ${scoreRecord.puntajeFinal}` : 'NOT FOUND');
+      console.log(
+        '📋 Found by correo:',
+        scoreRecord
+          ? `ID: ${scoreRecord._id}, Score: ${scoreRecord.puntajeFinal}`
+          : 'NOT FOUND',
+      );
     } else {
-      console.log('⚠️  WARNING: No userId or correo provided - will create new record each time!');
+      console.log(
+        '⚠️  WARNING: No userId or correo provided - will create new record each time!',
+      );
     }
 
     if (!scoreRecord) {
       console.log('🆕 Creating new score record');
-      scoreRecord = await this.initializeScoreRecord(sessionId, userId, nombre, correo);
-      console.log('✅ New record created:', { id: scoreRecord._id, initialScore: scoreRecord.puntajeFinal });
+      scoreRecord = await this.initializeScoreRecord(
+        sessionId,
+        userId,
+        nombre,
+        correo,
+      );
+      console.log('✅ New record created:', {
+        id: scoreRecord._id,
+        initialScore: scoreRecord.puntajeFinal,
+      });
     } else {
-      console.log('♻️  Using existing record:', { id: scoreRecord._id, currentScore: scoreRecord.puntajeFinal });
+      console.log('♻️  Using existing record:', {
+        id: scoreRecord._id,
+        currentScore: scoreRecord.puntajeFinal,
+      });
     }
 
     return scoreRecord;
@@ -477,9 +572,9 @@ export class SessionScoreService {
     questionId: string,
     answer: string,
     timeSpent: number,
-  ): Promise<{ 
-    isCorrect: boolean; 
-    points: number; 
+  ): Promise<{
+    isCorrect: boolean;
+    points: number;
     correctAnswer?: string;
     explanation?: string;
   }> {
@@ -490,29 +585,38 @@ export class SessionScoreService {
 
     switch (exercise.game) {
       case Game.QUIZ:
-        const quizQuestion = exercise.questions?.find((q: any) => q._id?.toString() === questionId);
+        const quizQuestion = exercise.questions?.find(
+          (q: any) => q._id?.toString() === questionId,
+        );
         if (quizQuestion) {
           const isMultipleChoice = Array.isArray(quizQuestion.correct_answer);
-          
+
           if (isMultipleChoice) {
             // Opción múltiple con varias respuestas correctas
             try {
               const selectedAnswers = JSON.parse(answer);
               const correctAnswers = quizQuestion.correct_answer;
-              
+
               if (!Array.isArray(selectedAnswers)) {
                 isCorrect = false;
                 points = 0;
               } else {
-                const correctlyMarked = selectedAnswers.filter((ans: string) => correctAnswers.includes(ans)).length;
-                const incorrectlyMarked = selectedAnswers.filter((ans: string) => !correctAnswers.includes(ans)).length;
-                
+                const correctlyMarked = selectedAnswers.filter((ans: string) =>
+                  correctAnswers.includes(ans),
+                ).length;
+                const incorrectlyMarked = selectedAnswers.filter(
+                  (ans: string) => !correctAnswers.includes(ans),
+                ).length;
+
                 // Fórmula: (correctas - incorrectas) / total correctas
-                const score = Math.max(0, (correctlyMarked - incorrectlyMarked) / correctAnswers.length);
+                const score = Math.max(
+                  0,
+                  (correctlyMarked - incorrectlyMarked) / correctAnswers.length,
+                );
                 isCorrect = score === 1.0;
                 points = score; // Puntuación parcial 0.0 a 1.0
               }
-              
+
               correctAnswer = JSON.stringify(correctAnswers);
               explanation = quizQuestion.explanation;
             } catch (e) {
@@ -521,7 +625,9 @@ export class SessionScoreService {
             }
           } else {
             // Opción única (comportamiento actual)
-            isCorrect = quizQuestion.correct_answer.toLowerCase().trim() === answer.toLowerCase().trim();
+            isCorrect =
+              quizQuestion.correct_answer.toLowerCase().trim() ===
+              answer.toLowerCase().trim();
             correctAnswer = quizQuestion.correct_answer;
             explanation = quizQuestion.explanation;
             points = isCorrect ? 1 : 0;
@@ -530,7 +636,9 @@ export class SessionScoreService {
         break;
 
       case Game.TRUE_OR_FALSE:
-        const tfQuestion = exercise.trueFalseQuestions?.find((q: any) => q._id?.toString() === questionId);
+        const tfQuestion = exercise.trueFalseQuestions?.find(
+          (q: any) => q._id?.toString() === questionId,
+        );
         if (tfQuestion) {
           const correctAnswerBool = tfQuestion.correct_answer;
           const answerBool = answer.toLowerCase() === 'true' || answer === '1';
@@ -543,9 +651,13 @@ export class SessionScoreService {
 
       case Game.FILL_IN_THE_BLANK:
         // 🔴 CORREGIDO: Usar exercise.questions en lugar de exercise.phrases
-        const fibQuestion = exercise.questions?.find((q: any) => q._id?.toString() === questionId);
+        const fibQuestion = exercise.questions?.find(
+          (q: any) => q._id?.toString() === questionId,
+        );
         if (fibQuestion) {
-          isCorrect = fibQuestion.correct_answer.toLowerCase().trim() === answer.toLowerCase().trim();
+          isCorrect =
+            fibQuestion.correct_answer.toLowerCase().trim() ===
+            answer.toLowerCase().trim();
           correctAnswer = fibQuestion.correct_answer;
           explanation = fibQuestion.explanation;
           points = isCorrect ? 1 : 0;
@@ -554,7 +666,8 @@ export class SessionScoreService {
 
       case Game.HANGMAN:
         if (exercise.word) {
-          isCorrect = exercise.word.toLowerCase().trim() === answer.toLowerCase().trim();
+          isCorrect =
+            exercise.word.toLowerCase().trim() === answer.toLowerCase().trim();
           correctAnswer = exercise.word;
           points = isCorrect ? 1 : 0;
         }
@@ -565,26 +678,32 @@ export class SessionScoreService {
         try {
           const studentOrder = JSON.parse(answer);
           const correctOrder = exercise.correctOrder || [];
-          
+
           if (!Array.isArray(studentOrder) || studentOrder.length === 0) {
             isCorrect = false;
             points = 0;
           } else {
             // Contar cuántos elementos están en la posición correcta
             let correctPositions = 0;
-            const minLength = Math.min(studentOrder.length, correctOrder.length);
-            
+            const minLength = Math.min(
+              studentOrder.length,
+              correctOrder.length,
+            );
+
             for (let i = 0; i < minLength; i++) {
               if (studentOrder[i] === correctOrder[i]) {
                 correctPositions++;
               }
             }
-            
+
             // Puntuación proporcional: elementos correctos / total de elementos
-            points = correctOrder.length > 0 ? correctPositions / correctOrder.length : 0;
+            points =
+              correctOrder.length > 0
+                ? correctPositions / correctOrder.length
+                : 0;
             isCorrect = points === 1.0;
           }
-          
+
           correctAnswer = JSON.stringify(correctOrder);
           explanation = exercise.explanation;
         } catch (e) {
@@ -598,26 +717,32 @@ export class SessionScoreService {
         try {
           const studentPairs = JSON.parse(answer);
           const correctPairs = exercise.pairs || [];
-          
+
           if (!Array.isArray(studentPairs) || studentPairs.length === 0) {
             isCorrect = false;
             points = 0;
           } else {
             // Contar cuántos pares son correctos
             let correctMatches = 0;
-            
+
             studentPairs.forEach((studentPair: any) => {
-              const correctPair = correctPairs.find((cp: any) => cp.term === studentPair.term);
+              const correctPair = correctPairs.find(
+                (cp: any) => cp.term === studentPair.term,
+              );
               if (correctPair && correctPair.match === studentPair.match) {
                 correctMatches++;
               }
             });
-            
+
             // Puntuación proporcional: pares correctos / total de pares
-            points = correctPairs.length > 0 ? correctMatches / correctPairs.length : 0;
-            isCorrect = points === 1.0 && studentPairs.length === correctPairs.length;
+            points =
+              correctPairs.length > 0
+                ? correctMatches / correctPairs.length
+                : 0;
+            isCorrect =
+              points === 1.0 && studentPairs.length === correctPairs.length;
           }
-          
+
           correctAnswer = JSON.stringify(correctPairs);
           explanation = exercise.explanation;
         } catch (e) {
@@ -627,17 +752,21 @@ export class SessionScoreService {
         break;
 
       default:
-        throw new BadRequestException(`Unsupported exercise type: ${exercise.game}`);
+        throw new BadRequestException(
+          `Unsupported exercise type: ${exercise.game}`,
+        );
     }
 
     return { isCorrect, points, correctAnswer, explanation };
   }
 
-  private async getTotalScoreableQuestions(session: SessionDocument): Promise<number> {
+  private async getTotalScoreableQuestions(
+    session: SessionDocument,
+  ): Promise<number> {
     let totalQuestions = 0;
 
     const exercises = await this.exerciseModel.find({
-      _id: { $in: session.exerciseIds }
+      _id: { $in: session.exerciseIds },
     });
 
     for (const exercise of exercises) {
@@ -671,9 +800,11 @@ export class SessionScoreService {
     return totalQuestions;
   }
 
-  private mapToScoreResponse(score: SessionScoreDocument): SessionScoreResponseDTO {
+  private mapToScoreResponse(
+    score: SessionScoreDocument,
+  ): SessionScoreResponseDTO {
     const respuestas: AnswerDetailDTO[] = [];
-    
+
     if (score.respuestas) {
       score.respuestas.forEach((value: any) => {
         respuestas.push({
@@ -748,9 +879,12 @@ export class SessionScoreService {
     scores.forEach((score, index) => {
       const totalAnswers = score.respuestas.size;
       const correctAnswers = Array.from(score.respuestas.values()).filter(
-        (r: any) => r.isCorrect
+        (r: any) => r.isCorrect,
       ).length;
-      const percentage = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+      const percentage =
+        totalAnswers > 0
+          ? Math.round((correctAnswers / totalAnswers) * 100)
+          : 0;
 
       // Format time (seconds to MM:SS)
       const minutes = Math.floor(score.tiempoTotal / 60);
@@ -838,11 +972,17 @@ export class SessionScoreService {
       fgColor: { argb: 'FF4472C4' },
     };
 
-    const completedScores = scores.filter(s => s.completado);
-    const totalScore = completedScores.reduce((sum, s) => sum + s.puntajeFinal, 0);
-    const averageScore = completedScores.length > 0 ? totalScore / completedScores.length : 0;
-    const highestScore = scores.length > 0 ? Math.max(...scores.map(s => s.puntajeFinal)) : 0;
-    const lowestScore = scores.length > 0 ? Math.min(...scores.map(s => s.puntajeFinal)) : 0;
+    const completedScores = scores.filter((s) => s.completado);
+    const totalScore = completedScores.reduce(
+      (sum, s) => sum + s.puntajeFinal,
+      0,
+    );
+    const averageScore =
+      completedScores.length > 0 ? totalScore / completedScores.length : 0;
+    const highestScore =
+      scores.length > 0 ? Math.max(...scores.map((s) => s.puntajeFinal)) : 0;
+    const lowestScore =
+      scores.length > 0 ? Math.min(...scores.map((s) => s.puntajeFinal)) : 0;
 
     const summaryData = [
       ['Nombre de la Sesión:', session.name],

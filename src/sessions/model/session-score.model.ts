@@ -1,11 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-export type SessionScoreDocument = SessionScore & Document & {
-  _id: Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type SessionScoreDocument = SessionScore &
+  Document & {
+    _id: Types.ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+  };
 
 @Schema({ timestamps: true })
 export class SessionScore {
@@ -31,15 +32,18 @@ export class SessionScore {
   fechaResolucion?: Date; // Date when the session was completed
 
   @Prop({ type: Map, of: Object, default: {} })
-  respuestas: Map<string, {
-    exerciseId: string;
-    questionId: string;
-    answer: string;
-    isCorrect: boolean;
-    points: number;
-    timeSpent: number;
-    timestamp: Date;
-  }>; // Detailed answers for each question
+  respuestas: Map<
+    string,
+    {
+      exerciseId: string;
+      questionId: string;
+      answer: string;
+      isCorrect: boolean;
+      points: number;
+      timeSpent: number;
+      timestamp: Date;
+    }
+  >; // Detailed answers for each question
 
   @Prop({ required: true, default: false })
   completado: boolean; // Whether the student completed the session
@@ -48,7 +52,13 @@ export class SessionScore {
 export const SessionScoreSchema = SchemaFactory.createForClass(SessionScore);
 
 // Create indexes for better performance and prevent duplicates
-SessionScoreSchema.index({ sessionId: 1, userId: 1 }, { unique: true, sparse: true });
-SessionScoreSchema.index({ sessionId: 1, correo: 1 }, { unique: true, sparse: true });
+SessionScoreSchema.index(
+  { sessionId: 1, userId: 1 },
+  { unique: true, sparse: true },
+);
+SessionScoreSchema.index(
+  { sessionId: 1, correo: 1 },
+  { unique: true, sparse: true },
+);
 SessionScoreSchema.index({ sessionId: 1 });
 SessionScoreSchema.index({ userId: 1 });

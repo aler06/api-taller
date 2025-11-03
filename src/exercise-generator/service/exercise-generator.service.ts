@@ -1,4 +1,10 @@
-import { Injectable, Logger, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ForbiddenException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -27,15 +33,19 @@ export class ExerciseGeneratorService {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  async generateExercise(request: ExerciseRequestDTO, userId: string,): Promise<ExerciseResponseDto> {
+  async generateExercise(
+    request: ExerciseRequestDTO,
+    userId: string,
+  ): Promise<ExerciseResponseDto> {
     try {
-      
       this.logger.log(
         `Generating ${request.gameType} exercise for topic: ${request.topic} by user: ${userId}`,
       );
 
       const prompt = this.buildPrompt(request);
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+      const model = this.genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash-exp',
+      });
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -44,14 +54,18 @@ export class ExerciseGeneratorService {
       this.logger.debug(`Generated response: ${generatedText}`);
 
       // Parse the JSON response and map to DTOs
-      const parsedResponse = GeminiResponseMapper.parseGeminiResponse(generatedText);
-      const exerciseDto = GeminiResponseMapper.mapToExerciseResponseDto(parsedResponse, request.gameType);
-      
+      const parsedResponse =
+        GeminiResponseMapper.parseGeminiResponse(generatedText);
+      const exerciseDto = GeminiResponseMapper.mapToExerciseResponseDto(
+        parsedResponse,
+        request.gameType,
+      );
+
       // Save exercise to database
       const exercise = new this.exerciseModel({
         userId,
         game: exerciseDto.game,
-        questions: exerciseDto.questions?.map(q => ({
+        questions: exerciseDto.questions?.map((q) => ({
           question: q.question,
           sentence: q.sentence,
           options: q.options,
@@ -60,26 +74,26 @@ export class ExerciseGeneratorService {
         })),
         word: exerciseDto.word,
         hint: exerciseDto.hint,
-        cards: exerciseDto.cards?.map(c => ({
+        cards: exerciseDto.cards?.map((c) => ({
           front: c.front,
           back: c.back,
         })),
         instructions: exerciseDto.instructions,
-        elements: exerciseDto.elements?.map(e => ({
+        elements: exerciseDto.elements?.map((e) => ({
           id: e.id,
           texto: e.texto,
         })),
         correctOrder: exerciseDto.correctOrder,
         explanation: exerciseDto.explanation,
-        trueFalseQuestions: exerciseDto.trueFalseQuestions?.map(tf => ({
+        trueFalseQuestions: exerciseDto.trueFalseQuestions?.map((tf) => ({
           statement: tf.statement,
           correct_answer: tf.correct_answer,
           explanation: tf.explanation,
         })),
-        phrases: exerciseDto.phrases?.map(p => ({
+        phrases: exerciseDto.phrases?.map((p) => ({
           text: p.text,
         })),
-        pairs: exerciseDto.pairs?.map(p => ({
+        pairs: exerciseDto.pairs?.map((p) => ({
           term: p.term,
           match: p.match,
         })),
@@ -89,34 +103,40 @@ export class ExerciseGeneratorService {
       });
 
       const savedExercise = await exercise.save();
-      
+
       // Update DTO with database info
       exerciseDto.id = savedExercise._id.toString();
       exerciseDto.createdAt = savedExercise.createdAt;
       exerciseDto.updatedAt = savedExercise.updatedAt;
 
       this.logger.log(`Exercise saved with ID: ${exerciseDto.id}`);
-      
+
       return exerciseDto;
     } catch (error) {
       this.logger.error('Error generating exercise:', error);
-      
+
       // Manejo específico de errores de la API de Gemini
       if (error.message.includes('GoogleGenerativeAI Error')) {
         if (error.message.includes('404')) {
-          throw new Error('El modelo de IA no está disponible. Verifique la configuración de la API.');
+          throw new Error(
+            'El modelo de IA no está disponible. Verifique la configuración de la API.',
+          );
         } else if (error.message.includes('403')) {
-          throw new Error('Acceso denegado a la API de Gemini. Verifique su clave de API.');
+          throw new Error(
+            'Acceso denegado a la API de Gemini. Verifique su clave de API.',
+          );
         } else if (error.message.includes('429')) {
-          throw new Error('Límite de solicitudes excedido. Intente de nuevo en unos minutos.');
+          throw new Error(
+            'Límite de solicitudes excedido. Intente de nuevo en unos minutos.',
+          );
         }
       }
-      
+
       throw new Error(`Error al generar ejercicio: ${error.message}`);
     }
   }
 
-  private buildPrompt(request: ExerciseRequestDTO): string {  
+  private buildPrompt(request: ExerciseRequestDTO): string {
     const difficultyText = request.difficulty
       ? ` con nivel de dificultad ${request.difficulty}`
       : '';
@@ -298,7 +318,7 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
   async getUserExercises(userId: string): Promise<ExerciseDocument[]> {
     try {
       this.logger.log(`Fetching exercises for user: ${userId}`);
-      
+
       return await this.exerciseModel
         .find({ userId })
         .sort({ createdAt: -1 })
@@ -309,10 +329,13 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
     }
   }
 
-  async getExerciseById(exerciseId: string, userId: string): Promise<ExerciseDocument> {
+  async getExerciseById(
+    exerciseId: string,
+    userId: string,
+  ): Promise<ExerciseDocument> {
     try {
       this.logger.log(`Fetching exercise: ${exerciseId} for user: ${userId}`);
-      
+
       const exercise = await this.exerciseModel
         .findOne({ _id: exerciseId, userId })
         .exec();
@@ -330,9 +353,8 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
 
   async deleteExercise(exerciseId: string, userId: string): Promise<boolean> {
     try {
-      
       this.logger.log(`Deleting exercise: ${exerciseId} for user: ${userId}`);
-      
+
       const result = await this.exerciseModel
         .deleteOne({ _id: exerciseId, userId })
         .exec();
@@ -344,11 +366,14 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
     }
   }
 
-  async updateExercise(request: ExerciseUpdateRequestDTO): Promise<ExerciseResponseDto> {
+  async updateExercise(
+    request: ExerciseUpdateRequestDTO,
+  ): Promise<ExerciseResponseDto> {
     try {
-            
-      this.logger.log(`Updating exercise: ${request.exerciseId} by user: ${request.userId}`);
-      
+      this.logger.log(
+        `Updating exercise: ${request.exerciseId} by user: ${request.userId}`,
+      );
+
       // Find the exercise to ensure it exists and belongs to the user
       const existingExercise = await this.exerciseModel
         .findOne({ _id: request.exerciseId, userId: request.userId })
@@ -360,9 +385,9 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
 
       // Prepare update data
       const updateData: Partial<Exercise> = {};
-      
+
       if (request.questions !== undefined) {
-        updateData.questions = request.questions.map(q => ({
+        updateData.questions = request.questions.map((q) => ({
           question: q.question,
           sentence: q.sentence,
           options: q.options,
@@ -370,29 +395,29 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
           explanation: q.explanation,
         }));
       }
-      
+
       if (request.word !== undefined) {
         updateData.word = request.word;
       }
-      
+
       if (request.hint !== undefined) {
         updateData.hint = request.hint;
       }
-      
+
       if (request.topic !== undefined) {
         updateData.topic = request.topic;
       }
-      
+
       if (request.difficulty !== undefined) {
         updateData.difficulty = request.difficulty;
       }
-      
+
       if (request.targetAudience !== undefined) {
         updateData.targetAudience = request.targetAudience;
       }
 
       if (request.cards !== undefined) {
-        updateData.cards = request.cards.map(c => ({
+        updateData.cards = request.cards.map((c) => ({
           front: c.front,
           back: c.back,
         }));
@@ -403,7 +428,7 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
       }
 
       if (request.elements !== undefined) {
-        updateData.elements = request.elements.map(e => ({
+        updateData.elements = request.elements.map((e) => ({
           id: e.id,
           texto: e.texto,
         }));
@@ -418,21 +443,23 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
       }
 
       if (request.trueFalseQuestions !== undefined) {
-        updateData.trueFalseQuestions = request.trueFalseQuestions.map(tf => ({
-          statement: tf.statement,
-          correct_answer: tf.correct_answer,
-          explanation: tf.explanation,
-        }));
+        updateData.trueFalseQuestions = request.trueFalseQuestions.map(
+          (tf) => ({
+            statement: tf.statement,
+            correct_answer: tf.correct_answer,
+            explanation: tf.explanation,
+          }),
+        );
       }
 
       if (request.phrases !== undefined) {
-        updateData.phrases = request.phrases.map(p => ({
+        updateData.phrases = request.phrases.map((p) => ({
           text: p.text,
         }));
       }
 
       if (request.pairs !== undefined) {
-        updateData.pairs = request.pairs.map(p => ({
+        updateData.pairs = request.pairs.map((p) => ({
           term: p.term,
           match: p.match,
         }));
@@ -488,15 +515,17 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
       };
 
       this.logger.log(`Exercise updated successfully: ${request.exerciseId}`);
-      
+
       return responseDto;
     } catch (error) {
       this.logger.error('Error updating exercise:', error);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new Error(`Failed to update exercise: ${error.message}`);
     }
   }
-
 }

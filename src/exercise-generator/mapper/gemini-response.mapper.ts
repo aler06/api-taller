@@ -96,7 +96,10 @@ export type GeminiResponse =
   | GeminiMatchingResponse;
 
 export class GeminiResponseMapper {
-  static mapToExerciseResponseDto(geminiResponse: GeminiResponse, gameType: Game,): ExerciseResponseDto {
+  static mapToExerciseResponseDto(
+    geminiResponse: GeminiResponse,
+    gameType: Game,
+  ): ExerciseResponseDto {
     const exercise: ExerciseResponseDto = {
       id: this.generateTempId(),
       game: gameType,
@@ -106,84 +109,130 @@ export class GeminiResponseMapper {
 
     switch (gameType) {
       case Game.QUIZ:
-        return this.mapQuizResponse(exercise, geminiResponse as GeminiQuizResponse);
+        return this.mapQuizResponse(
+          exercise,
+          geminiResponse as GeminiQuizResponse,
+        );
 
       case Game.HANGMAN:
-        return this.mapHangmanResponse(exercise, geminiResponse as GeminiHangmanResponse);
+        return this.mapHangmanResponse(
+          exercise,
+          geminiResponse as GeminiHangmanResponse,
+        );
 
       case Game.FILL_IN_THE_BLANK:
-        return this.mapFillInTheBlankResponse(exercise,geminiResponse as GeminiFillInTheBlankResponse,
+        return this.mapFillInTheBlankResponse(
+          exercise,
+          geminiResponse as GeminiFillInTheBlankResponse,
         );
 
       case Game.FLIP_CARDS:
-        return this.mapFlipCardsResponse(exercise, geminiResponse as GeminiFlipCardsResponse);
+        return this.mapFlipCardsResponse(
+          exercise,
+          geminiResponse as GeminiFlipCardsResponse,
+        );
 
       case Game.DRAG_AND_DROP:
-        return this.mapDragAndDropResponse(exercise, geminiResponse as GeminiDragAndDropResponse);
+        return this.mapDragAndDropResponse(
+          exercise,
+          geminiResponse as GeminiDragAndDropResponse,
+        );
 
       case Game.TRUE_OR_FALSE:
-        return this.mapTrueFalseResponse(exercise, geminiResponse as GeminiTrueFalseResponse);
+        return this.mapTrueFalseResponse(
+          exercise,
+          geminiResponse as GeminiTrueFalseResponse,
+        );
 
       case Game.ROULETTE:
-        return this.mapRouletteResponse(exercise, geminiResponse as GeminiRouletteResponse);
+        return this.mapRouletteResponse(
+          exercise,
+          geminiResponse as GeminiRouletteResponse,
+        );
 
       case Game.MATCHING:
-        return this.mapMatchingResponse(exercise, geminiResponse as GeminiMatchingResponse);
+        return this.mapMatchingResponse(
+          exercise,
+          geminiResponse as GeminiMatchingResponse,
+        );
 
       default:
         throw new Error(`Unsupported game type: ${gameType}`);
     }
   }
 
-  private static mapQuizResponse(exercise: ExerciseResponseDto, quizResponse: GeminiQuizResponse,): ExerciseResponseDto {
+  private static mapQuizResponse(
+    exercise: ExerciseResponseDto,
+    quizResponse: GeminiQuizResponse,
+  ): ExerciseResponseDto {
     exercise.questions =
-      quizResponse.preguntas?.map((pregunta): QuestionResponseDto => ({
-        question: pregunta.pregunta,
-        options: pregunta.alternativas,
-        correct_answer: pregunta.respuesta_correcta,
-        explanation: pregunta.explicacion,
-      })) || [];
+      quizResponse.preguntas?.map(
+        (pregunta): QuestionResponseDto => ({
+          question: pregunta.pregunta,
+          options: pregunta.alternativas,
+          correct_answer: pregunta.respuesta_correcta,
+          explanation: pregunta.explicacion,
+        }),
+      ) || [];
 
     return exercise;
   }
 
-  private static mapHangmanResponse(exercise: ExerciseResponseDto, hangmanResponse: GeminiHangmanResponse,): ExerciseResponseDto {
+  private static mapHangmanResponse(
+    exercise: ExerciseResponseDto,
+    hangmanResponse: GeminiHangmanResponse,
+  ): ExerciseResponseDto {
     exercise.word = hangmanResponse.palabra;
     exercise.hint = hangmanResponse.pista;
 
     return exercise;
   }
 
-  private static mapFillInTheBlankResponse(exercise: ExerciseResponseDto, fillBlankResponse: GeminiFillInTheBlankResponse,): ExerciseResponseDto {
+  private static mapFillInTheBlankResponse(
+    exercise: ExerciseResponseDto,
+    fillBlankResponse: GeminiFillInTheBlankResponse,
+  ): ExerciseResponseDto {
     exercise.questions =
-      fillBlankResponse.preguntas?.map((pregunta): QuestionResponseDto => ({
-        sentence: pregunta.oracion,
-        options: pregunta.alternativas,
-        correct_answer: pregunta.respuesta_correcta,
-        explanation: pregunta.explicacion,
-      })) || [];
+      fillBlankResponse.preguntas?.map(
+        (pregunta): QuestionResponseDto => ({
+          sentence: pregunta.oracion,
+          options: pregunta.alternativas,
+          correct_answer: pregunta.respuesta_correcta,
+          explanation: pregunta.explicacion,
+        }),
+      ) || [];
 
     return exercise;
   }
 
-  private static mapFlipCardsResponse(exercise: ExerciseResponseDto, flipCardsResponse: GeminiFlipCardsResponse,): ExerciseResponseDto {
+  private static mapFlipCardsResponse(
+    exercise: ExerciseResponseDto,
+    flipCardsResponse: GeminiFlipCardsResponse,
+  ): ExerciseResponseDto {
     exercise.cards =
-      flipCardsResponse.tarjetas?.map((tarjeta): CardResponseDto => ({
-        front: tarjeta.anverso,
-        back: tarjeta.reverso,
-      })) || [];
+      flipCardsResponse.tarjetas?.map(
+        (tarjeta): CardResponseDto => ({
+          front: tarjeta.anverso,
+          back: tarjeta.reverso,
+        }),
+      ) || [];
 
     exercise.instructions = flipCardsResponse.instrucciones;
 
     return exercise;
   }
 
-  private static mapDragAndDropResponse(exercise: ExerciseResponseDto, dragAndDropResponse: GeminiDragAndDropResponse,): ExerciseResponseDto {
+  private static mapDragAndDropResponse(
+    exercise: ExerciseResponseDto,
+    dragAndDropResponse: GeminiDragAndDropResponse,
+  ): ExerciseResponseDto {
     exercise.elements =
-      dragAndDropResponse.elementos?.map((elemento): ElementResponseDto => ({
-        id: elemento.id,
-        texto: elemento.texto,
-      })) || [];
+      dragAndDropResponse.elementos?.map(
+        (elemento): ElementResponseDto => ({
+          id: elemento.id,
+          texto: elemento.texto,
+        }),
+      ) || [];
 
     exercise.correctOrder = dragAndDropResponse.orden_correcto;
     exercise.instructions = dragAndDropResponse.instrucciones;
@@ -192,34 +241,49 @@ export class GeminiResponseMapper {
     return exercise;
   }
 
-  private static mapTrueFalseResponse(exercise: ExerciseResponseDto, trueFalseResponse: GeminiTrueFalseResponse,): ExerciseResponseDto {
+  private static mapTrueFalseResponse(
+    exercise: ExerciseResponseDto,
+    trueFalseResponse: GeminiTrueFalseResponse,
+  ): ExerciseResponseDto {
     exercise.trueFalseQuestions =
-      trueFalseResponse.preguntas?.map((pregunta): TrueFalseResponseDto => ({
-        statement: pregunta.afirmacion,
-        correct_answer: pregunta.respuesta_correcta,
-        explanation: pregunta.explicacion,
-      })) || [];
+      trueFalseResponse.preguntas?.map(
+        (pregunta): TrueFalseResponseDto => ({
+          statement: pregunta.afirmacion,
+          correct_answer: pregunta.respuesta_correcta,
+          explanation: pregunta.explicacion,
+        }),
+      ) || [];
 
     return exercise;
   }
 
-  private static mapRouletteResponse(exercise: ExerciseResponseDto, rouletteResponse: GeminiRouletteResponse,): ExerciseResponseDto {
+  private static mapRouletteResponse(
+    exercise: ExerciseResponseDto,
+    rouletteResponse: GeminiRouletteResponse,
+  ): ExerciseResponseDto {
     exercise.phrases =
-      rouletteResponse.frases?.map((frase): PhraseResponseDto => ({
-        text: frase,
-      })) || [];
+      rouletteResponse.frases?.map(
+        (frase): PhraseResponseDto => ({
+          text: frase,
+        }),
+      ) || [];
 
     exercise.instructions = rouletteResponse.instrucciones;
 
     return exercise;
   }
 
-  private static mapMatchingResponse(exercise: ExerciseResponseDto, matchingResponse: GeminiMatchingResponse,): ExerciseResponseDto {
+  private static mapMatchingResponse(
+    exercise: ExerciseResponseDto,
+    matchingResponse: GeminiMatchingResponse,
+  ): ExerciseResponseDto {
     exercise.pairs =
-      matchingResponse.pares?.map((par): PairResponseDto => ({
-        term: par.termino,
-        match: par.coincidencia,
-      })) || [];
+      matchingResponse.pares?.map(
+        (par): PairResponseDto => ({
+          term: par.termino,
+          match: par.coincidencia,
+        }),
+      ) || [];
 
     exercise.instructions = matchingResponse.instrucciones;
 
@@ -239,7 +303,9 @@ export class GeminiResponseMapper {
       }
       return JSON.parse(jsonMatch[0]);
     } catch (error) {
-      throw new Error(`Invalid JSON response from Gemini API: ${error.message}`);
+      throw new Error(
+        `Invalid JSON response from Gemini API: ${error.message}`,
+      );
     }
   }
 }

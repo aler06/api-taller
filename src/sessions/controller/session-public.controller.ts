@@ -6,12 +6,7 @@ import {
   NotFoundException,
   Res,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { SessionService } from '../service/session.service';
 import { SessionResponseDTO } from '../dto/session-response.dto';
@@ -22,9 +17,10 @@ export class SessionPublicController {
   constructor(private readonly sessionService: SessionService) {}
 
   @Get('join/:accessCode')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Join session page',
-    description: 'Public endpoint to access session join page using shareable link' 
+    description:
+      'Public endpoint to access session join page using shareable link',
   })
   @ApiParam({
     name: 'accessCode',
@@ -40,18 +36,28 @@ export class SessionPublicController {
     status: HttpStatus.NOT_FOUND,
     description: 'Session not found',
   })
-  async joinSessionPage(@Param('accessCode') accessCode: string): Promise<SessionResponseDTO> {
-    const session = await this.sessionService.findSessionByAccessCode(accessCode);
+  async joinSessionPage(
+    @Param('accessCode') accessCode: string,
+  ): Promise<SessionResponseDTO> {
+    const session =
+      await this.sessionService.findSessionByAccessCode(accessCode);
     if (!session) {
-      throw new NotFoundException('Session not found with the provided access code');
+      throw new NotFoundException(
+        'Session not found with the provided access code',
+      );
     }
-    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
+    return this.sessionService.mapToSessionResponse(
+      session,
+      session.teacherId,
+      session.exerciseIds,
+    );
   }
 
   @Get('redirect/:accessCode')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Redirect to frontend join page',
-    description: 'Redirects to the frontend application with session information' 
+    description:
+      'Redirects to the frontend application with session information',
   })
   @ApiParam({
     name: 'accessCode',
@@ -60,35 +66,38 @@ export class SessionPublicController {
   })
   async redirectToFrontend(
     @Param('accessCode') accessCode: string,
-    @Res() res: Response
+    @Res() res: Response,
   ): Promise<void> {
-    const session = await this.sessionService.findSessionByAccessCode(accessCode);
+    const session =
+      await this.sessionService.findSessionByAccessCode(accessCode);
     if (!session) {
-      throw new NotFoundException('Session not found with the provided access code');
+      throw new NotFoundException(
+        'Session not found with the provided access code',
+      );
     }
-    
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const redirectUrl = `${frontendUrl}/session/join/${accessCode}`;
-    
+
     res.redirect(302, redirectUrl);
   }
 
   @Get('test/users')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get test users for development',
-    description: 'Get a list of users for testing WebSocket connections' 
+    description: 'Get a list of users for testing WebSocket connections',
   })
   async getTestUsers() {
     // This is for development/testing only
     const users = await this.sessionService.getTestUsers();
     return {
       message: 'Test users for WebSocket connection',
-      users: users.map(user => ({
+      users: users.map((user) => ({
         id: user._id.toString(),
         name: `${user.firstName} ${user.lastName}`,
         role: user.role,
-        email: user.email
-      }))
+        email: user.email,
+      })),
     };
   }
 }

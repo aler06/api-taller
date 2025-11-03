@@ -41,9 +41,10 @@ export class SessionController {
   @UseGuards(RolesGuard)
   @Roles(Role.TEACHER)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new session',
-    description: 'Create a new interactive session for students. Only teachers can create sessions.' 
+    description:
+      'Create a new interactive session for students. Only teachers can create sessions.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -56,7 +57,8 @@ export class SessionController {
   })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,
-    description: 'User is not a teacher or exercise does not belong to the teacher',
+    description:
+      'User is not a teacher or exercise does not belong to the teacher',
   })
   async createSession(
     @Body() createSessionDto: CreateSessionRequestDTO,
@@ -71,9 +73,10 @@ export class SessionController {
   @UseGuards(RolesGuard)
   @Roles(Role.STUDENT)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Join a session',
-    description: 'Join an existing session using an access code. Only students can join sessions.' 
+    description:
+      'Join an existing session using an access code. Only students can join sessions.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -98,9 +101,10 @@ export class SessionController {
   }
 
   @Get('my-sessions')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get user sessions',
-    description: 'Get all sessions for the authenticated user. Teachers get their created sessions, students get their joined sessions.' 
+    description:
+      'Get all sessions for the authenticated user. Teachers get their created sessions, students get their joined sessions.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -118,9 +122,10 @@ export class SessionController {
   @Get('teacher/:teacherId')
   @UseGuards(RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get sessions by teacher',
-    description: 'Get all sessions created by a specific teacher. Only accessible by the teacher themselves or admins.' 
+    description:
+      'Get all sessions created by a specific teacher. Only accessible by the teacher themselves or admins.',
   })
   @ApiParam({
     name: 'teacherId',
@@ -144,9 +149,9 @@ export class SessionController {
   }
 
   @Get(':sessionId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get session by ID',
-    description: 'Get detailed information about a specific session' 
+    description: 'Get detailed information about a specific session',
   })
   @ApiParam({
     name: 'sessionId',
@@ -162,16 +167,19 @@ export class SessionController {
     status: HttpStatus.NOT_FOUND,
     description: 'Session not found',
   })
-  async getSessionById(@Param('sessionId') sessionId: string): Promise<SessionResponseDTO> {
+  async getSessionById(
+    @Param('sessionId') sessionId: string,
+  ): Promise<SessionResponseDTO> {
     return this.sessionService.getSessionById(sessionId);
   }
 
   @Put(':sessionId/start')
   @UseGuards(RolesGuard)
   @Roles(Role.TEACHER)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Start a session',
-    description: 'Start a waiting session. Only the session creator can start it.' 
+    description:
+      'Start a waiting session. Only the session creator can start it.',
   })
   @ApiParam({
     name: 'sessionId',
@@ -205,9 +213,9 @@ export class SessionController {
   @Put(':sessionId/end')
   @UseGuards(RolesGuard)
   @Roles(Role.TEACHER)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'End a session',
-    description: 'End an active session. Only the session creator can end it.' 
+    description: 'End an active session. Only the session creator can end it.',
   })
   @ApiParam({
     name: 'sessionId',
@@ -241,9 +249,10 @@ export class SessionController {
   @Put(':sessionId/cancel')
   @UseGuards(RolesGuard)
   @Roles(Role.TEACHER)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Cancel a session',
-    description: 'Cancel a session that has not finished yet. Only the session creator can cancel it.' 
+    description:
+      'Cancel a session that has not finished yet. Only the session creator can cancel it.',
   })
   @ApiParam({
     name: 'sessionId',
@@ -278,9 +287,10 @@ export class SessionController {
   @UseGuards(RolesGuard)
   @Roles(Role.TEACHER)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete a session',
-    description: 'Delete a session. Only the session creator can delete it. Cannot delete active sessions.' 
+    description:
+      'Delete a session. Only the session creator can delete it. Cannot delete active sessions.',
   })
   @ApiParam({
     name: 'sessionId',
@@ -311,9 +321,10 @@ export class SessionController {
   }
 
   @Get('access-code/:accessCode')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get session by access code',
-    description: 'Get session information using an access code (for join page preview)' 
+    description:
+      'Get session information using an access code (for join page preview)',
   })
   @ApiParam({
     name: 'accessCode',
@@ -329,11 +340,18 @@ export class SessionController {
     status: HttpStatus.NOT_FOUND,
     description: 'Session not found',
   })
-  async getSessionByAccessCode(@Param('accessCode') accessCode: string): Promise<SessionResponseDTO> {
-    const session = await this.sessionService.findSessionByAccessCode(accessCode);
+  async getSessionByAccessCode(
+    @Param('accessCode') accessCode: string,
+  ): Promise<SessionResponseDTO> {
+    const session =
+      await this.sessionService.findSessionByAccessCode(accessCode);
     if (!session) {
       throw new Error('Session not found');
     }
-    return this.sessionService.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
+    return this.sessionService.mapToSessionResponse(
+      session,
+      session.teacherId,
+      session.exerciseIds,
+    );
   }
 }

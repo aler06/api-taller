@@ -10,7 +10,7 @@ dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+
   console.log('🌐 CORS enabled for ALL origins');
 
   // Configurar CORS para permitir todos los orígenes con credentials
@@ -21,7 +21,13 @@ async function bootstrap() {
       callback(null, origin || '*');
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
     exposedHeaders: ['Authorization'],
     credentials: true,
     preflightContinue: false,
@@ -56,12 +62,14 @@ async function bootstrap() {
     .build();
   const documentFactory = SwaggerModule.createDocument(app, openapiconfig);
   SwaggerModule.setup(`${apiPrefix}/docs`, app, documentFactory);
-  
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
-  
+
   console.log(`\n🚀 Application is running on: http://0.0.0.0:${port}`);
-  console.log(`📚 Swagger documentation: http://0.0.0.0:${port}/${apiPrefix}/docs`);
+  console.log(
+    `📚 Swagger documentation: http://0.0.0.0:${port}/${apiPrefix}/docs`,
+  );
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔐 CORS: Enabled for all origins\n`);
 }

@@ -11,6 +11,7 @@ import {
   Query,
   Put,
   Patch,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -137,7 +138,8 @@ export class ExerciseGeneratorController {
       },
       roulette_programming: {
         summary: 'Roulette - Programming concepts',
-        description: 'Interactive roulette game for learning programming concepts',
+        description:
+          'Interactive roulette game for learning programming concepts',
         value: {
           userId: '507f1f77bcf86cd799439017',
           topic: 'Programming Fundamentals',
@@ -149,7 +151,8 @@ export class ExerciseGeneratorController {
       },
       matching_programming: {
         summary: 'Matching - Programming concepts',
-        description: 'Matching game for learning programming terms and definitions',
+        description:
+          'Matching game for learning programming terms and definitions',
         value: {
           userId: '507f1f77bcf86cd799439018',
           topic: 'Programming Fundamentals',
@@ -207,7 +210,8 @@ export class ExerciseGeneratorController {
                   sentence: 'The capital of France is ____.',
                   options: ['Madrid', 'Paris', 'Rome', 'Berlin'],
                   correct_answer: 'Paris',
-                  explanation: 'Paris is the capital and most populous city of France since the 10th century.',
+                  explanation:
+                    'Paris is the capital and most populous city of France since the 10th century.',
                 },
               ],
               createdAt: '2024-01-15T10:30:00.000Z',
@@ -229,7 +233,8 @@ export class ExerciseGeneratorController {
                   back: 'Función integrada de Python que se utiliza para mostrar información en pantalla.',
                 },
               ],
-              instructions: 'Da la vuelta a cada tarjeta para aprender o repasar conceptos clave de Python.',
+              instructions:
+                'Da la vuelta a cada tarjeta para aprender o repasar conceptos clave de Python.',
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -258,8 +263,10 @@ export class ExerciseGeneratorController {
                 },
               ],
               correctOrder: [1, 2, 3, 4],
-              instructions: 'Arrastra y suelta cada paso en el orden correcto para escribir y ejecutar un programa en Python.',
-              explanation: 'El flujo lógico de un programa en Python comienza importando librerías, luego se definen variables, después se escriben las funciones y finalmente se ejecuta el programa.',
+              instructions:
+                'Arrastra y suelta cada paso en el orden correcto para escribir y ejecutar un programa en Python.',
+              explanation:
+                'El flujo lógico de un programa en Python comienza importando librerías, luego se definen variables, después se escriben las funciones y finalmente se ejecuta el programa.',
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -273,12 +280,15 @@ export class ExerciseGeneratorController {
                 {
                   statement: 'Python is a compiled programming language',
                   correct_answer: false,
-                  explanation: 'Python is actually an interpreted programming language, not compiled. The code is executed line by line through an interpreter.',
+                  explanation:
+                    'Python is actually an interpreted programming language, not compiled. The code is executed line by line through an interpreter.',
                 },
                 {
-                  statement: 'Variables in Python must be declared with a specific type',
+                  statement:
+                    'Variables in Python must be declared with a specific type',
                   correct_answer: false,
-                  explanation: 'Python is dynamically typed, variables do not need explicit type declaration.',
+                  explanation:
+                    'Python is dynamically typed, variables do not need explicit type declaration.',
                 },
               ],
               createdAt: '2024-01-15T10:30:00.000Z',
@@ -304,7 +314,8 @@ export class ExerciseGeneratorController {
                   text: 'Las estructuras de control como bucles permiten ejecutar código repetidamente.',
                 },
               ],
-              instructions: 'Gira la ruleta y responde la pregunta que te toque. Cada pregunta está relacionada con conceptos básicos de programación.',
+              instructions:
+                'Gira la ruleta y responde la pregunta que te toque. Cada pregunta está relacionada con conceptos básicos de programación.',
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -325,10 +336,12 @@ export class ExerciseGeneratorController {
                 },
                 {
                   term: 'Clase',
-                  match: 'Plantilla para crear objetos en programación orientada a objetos',
+                  match:
+                    'Plantilla para crear objetos en programación orientada a objetos',
                 },
               ],
-              instructions: 'Empareja cada concepto con su definición correcta.',
+              instructions:
+                'Empareja cada concepto con su definición correcta.',
               createdAt: '2024-01-15T10:30:00.000Z',
               updatedAt: '2024-01-15T10:30:00.000Z',
             },
@@ -400,11 +413,19 @@ export class ExerciseGeneratorController {
       },
     },
   })
-  async generateExercise(@Body() request: ExerciseRequestDTO,): Promise<ExerciseResponseDto> {
+  async generateExercise(
+    @Body() request: ExerciseRequestDTO,
+  ): Promise<ExerciseResponseDto | any> {
     try {
-      return await this.exerciseGeneratorService.generateExercise(request, request.userId,);
+      return await this.exerciseGeneratorService.generateExercise(
+        request,
+        request.userId,
+      );
     } catch (error) {
-      if (error.message === 'Only teachers can perform this action' || error.name === 'ForbiddenException') {
+      if (
+        error.message === 'Only teachers can perform this action' ||
+        error.name === 'ForbiddenException'
+      ) {
         throw new HttpException(
           {
             statusCode: HttpStatus.FORBIDDEN,
@@ -415,7 +436,7 @@ export class ExerciseGeneratorController {
           HttpStatus.FORBIDDEN,
         );
       }
-      
+
       throw new HttpException(
         {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -429,6 +450,8 @@ export class ExerciseGeneratorController {
       );
     }
   }
+
+  private readonly logger = new Logger(ExerciseGeneratorController.name);
 
   @Get('my-exercises')
   @ApiOperation({
@@ -446,7 +469,9 @@ export class ExerciseGeneratorController {
     description: 'User exercises retrieved successfully',
     type: [ExerciseResponseDto],
   })
-  async getUserExercises(@Query('userId') userId: string,): Promise<ExerciseResponseDto[]> {
+  async getUserExercises(
+    @Query('userId') userId: string,
+  ): Promise<ExerciseResponseDto[]> {
     try {
       const exercises =
         await this.exerciseGeneratorService.getUserExercises(userId);
@@ -523,7 +548,10 @@ export class ExerciseGeneratorController {
     description: 'Exercise retrieved successfully',
     type: ExerciseResponseDto,
   })
-  async getExerciseById(@Query('exerciseId') exerciseId: string, @Query('userId') userId: string,): Promise<ExerciseResponseDto> {
+  async getExerciseById(
+    @Query('exerciseId') exerciseId: string,
+    @Query('userId') userId: string,
+  ): Promise<ExerciseResponseDto> {
     try {
       const exercise = await this.exerciseGeneratorService.getExerciseById(
         exerciseId,
@@ -615,7 +643,10 @@ export class ExerciseGeneratorController {
         );
       }
     } catch (error) {
-      if (error.message === 'Only teachers can perform this action' || error.name === 'ForbiddenException') {
+      if (
+        error.message === 'Only teachers can perform this action' ||
+        error.name === 'ForbiddenException'
+      ) {
         throw new HttpException(
           {
             statusCode: HttpStatus.FORBIDDEN,
@@ -660,11 +691,12 @@ export class ExerciseGeneratorController {
               question: 'What is the updated capital of France?',
               options: ['Madrid', 'Paris', 'Rome', 'Berlin'],
               correct_answer: 'Paris',
-              explanation: 'Paris has been the capital of France since the 10th century.'
-            }
+              explanation:
+                'Paris has been the capital of France since the 10th century.',
+            },
           ],
           topic: 'Updated European Geography',
-          difficulty: 'intermediate'
+          difficulty: 'intermediate',
         },
       },
       hangman_update: {
@@ -675,7 +707,7 @@ export class ExerciseGeneratorController {
           userId: '507f1f77bcf86cd799439011',
           word: 'algorithm',
           hint: 'A step-by-step procedure for solving a problem',
-          topic: 'Computer Science Fundamentals'
+          topic: 'Computer Science Fundamentals',
         },
       },
       fill_blank_update: {
@@ -689,17 +721,19 @@ export class ExerciseGeneratorController {
               sentence: 'The capital of France is ____.',
               options: ['Madrid', 'Paris', 'Rome', 'Berlin'],
               correct_answer: 'Paris',
-              explanation: 'Paris is the capital and most populous city of France since the 10th century.'
+              explanation:
+                'Paris is the capital and most populous city of France since the 10th century.',
             },
             {
               sentence: 'The Industrial Revolution began in ____.',
               options: ['France', 'Germany', 'England', 'Spain'],
               correct_answer: 'England',
-              explanation: 'The Industrial Revolution started in England in the late 18th century.'
-            }
+              explanation:
+                'The Industrial Revolution started in England in the late 18th century.',
+            },
           ],
           topic: 'Updated European History',
-          difficulty: 'intermediate'
+          difficulty: 'intermediate',
         },
       },
       flip_cards_update: {
@@ -711,19 +745,20 @@ export class ExerciseGeneratorController {
           cards: [
             {
               front: '¿Qué es Python? (ACTUALIZADA)',
-              back: 'Es un lenguaje de programación interpretado, de alto nivel y con tipado dinámico que se caracteriza por su sintaxis clara y legible.'
+              back: 'Es un lenguaje de programación interpretado, de alto nivel y con tipado dinámico que se caracteriza por su sintaxis clara y legible.',
             },
             {
               front: 'print()',
-              back: 'Función integrada de Python que se utiliza para mostrar información en pantalla.'
+              back: 'Función integrada de Python que se utiliza para mostrar información en pantalla.',
             },
             {
               front: 'Variables en Python (NUEVA TARJETA)',
-              back: 'Contenedores que almacenan valores de datos y pueden cambiar durante la ejecución del programa.'
-            }
+              back: 'Contenedores que almacenan valores de datos y pueden cambiar durante la ejecución del programa.',
+            },
           ],
-          instructions: 'Da la vuelta a cada tarjeta para aprender conceptos fundamentales de Python. (INSTRUCCIONES ACTUALIZADAS)',
-          topic: 'Python Programming - Conceptos Básicos Actualizados'
+          instructions:
+            'Da la vuelta a cada tarjeta para aprender conceptos fundamentales de Python. (INSTRUCCIONES ACTUALIZADAS)',
+          topic: 'Python Programming - Conceptos Básicos Actualizados',
         },
       },
       drag_and_drop_update: {
@@ -735,33 +770,35 @@ export class ExerciseGeneratorController {
           elements: [
             {
               id: 1,
-              texto: 'Instalar Python y configurar el entorno'
+              texto: 'Instalar Python y configurar el entorno',
             },
             {
               id: 2,
-              texto: 'Importar librerías necesarias'
+              texto: 'Importar librerías necesarias',
             },
             {
               id: 3,
-              texto: 'Definir variables y constantes'
+              texto: 'Definir variables y constantes',
             },
             {
               id: 4,
-              texto: 'Escribir funciones principales'
+              texto: 'Escribir funciones principales',
             },
             {
               id: 5,
-              texto: 'Implementar lógica de negocio'
+              texto: 'Implementar lógica de negocio',
             },
             {
               id: 6,
-              texto: 'Ejecutar y probar el programa'
-            }
+              texto: 'Ejecutar y probar el programa',
+            },
           ],
           correctOrder: [1, 2, 3, 4, 5, 6],
-          instructions: 'Arrastra y suelta cada paso en el orden correcto para desarrollar un programa completo en Python. (INSTRUCCIONES ACTUALIZADAS)',
-          explanation: 'El flujo completo de desarrollo en Python incluye la configuración del entorno, importación de librerías, definición de variables, escritura de funciones, implementación de la lógica y finalmente la ejecución y pruebas del programa.',
-          topic: 'Python - Ciclo Completo de Desarrollo de Software'
+          instructions:
+            'Arrastra y suelta cada paso en el orden correcto para desarrollar un programa completo en Python. (INSTRUCCIONES ACTUALIZADAS)',
+          explanation:
+            'El flujo completo de desarrollo en Python incluye la configuración del entorno, importación de librerías, definición de variables, escritura de funciones, implementación de la lógica y finalmente la ejecución y pruebas del programa.',
+          topic: 'Python - Ciclo Completo de Desarrollo de Software',
         },
       },
       true_or_false_update: {
@@ -772,22 +809,28 @@ export class ExerciseGeneratorController {
           userId: '507f1f77bcf86cd799439011',
           trueFalseQuestions: [
             {
-              statement: 'Python es un lenguaje de programación compilado (ACTUALIZADA)',
+              statement:
+                'Python es un lenguaje de programación compilado (ACTUALIZADA)',
               correct_answer: false,
-              explanation: 'Python es un lenguaje interpretado, no compilado. El código se ejecuta línea por línea a través de un intérprete. (EXPLICACIÓN ACTUALIZADA)'
+              explanation:
+                'Python es un lenguaje interpretado, no compilado. El código se ejecuta línea por línea a través de un intérprete. (EXPLICACIÓN ACTUALIZADA)',
             },
             {
-              statement: 'Las variables en Python deben declararse con un tipo específico',
+              statement:
+                'Las variables en Python deben declararse con un tipo específico',
               correct_answer: false,
-              explanation: 'Python es un lenguaje de tipado dinámico, las variables no necesitan declaración de tipo explícita.'
+              explanation:
+                'Python es un lenguaje de tipado dinámico, las variables no necesitan declaración de tipo explícita.',
             },
             {
-              statement: 'Python soporta programación orientada a objetos (NUEVA PREGUNTA)',
+              statement:
+                'Python soporta programación orientada a objetos (NUEVA PREGUNTA)',
               correct_answer: true,
-              explanation: 'Python es un lenguaje multiparadigma que soporta programación orientada a objetos, funcional y procedural.'
-            }
+              explanation:
+                'Python es un lenguaje multiparadigma que soporta programación orientada a objetos, funcional y procedural.',
+            },
           ],
-          topic: 'Python Programming - Conceptos Fundamentales Actualizados'
+          topic: 'Python Programming - Conceptos Fundamentales Actualizados',
         },
       },
       roulette_update: {
@@ -798,20 +841,21 @@ export class ExerciseGeneratorController {
           userId: '507f1f77bcf86cd799439011',
           phrases: [
             {
-              text: 'Python es un lenguaje de tipado dinámico y interpretado (ACTUALIZADA).'
+              text: 'Python es un lenguaje de tipado dinámico y interpretado (ACTUALIZADA).',
             },
             {
-              text: 'La programación orientada a objetos se basa en clases y objetos.'
+              text: 'La programación orientada a objetos se basa en clases y objetos.',
             },
             {
-              text: 'Java no permite herencia múltiple de clases, pero sí de interfaces.'
+              text: 'Java no permite herencia múltiple de clases, pero sí de interfaces.',
             },
             {
-              text: 'Las funciones en Python pueden retornar múltiples valores (NUEVA FRASE).'
-            }
+              text: 'Las funciones en Python pueden retornar múltiples valores (NUEVA FRASE).',
+            },
           ],
-          instructions: 'Gira la ruleta y responde las preguntas sobre conceptos fundamentales de programación. (INSTRUCCIONES ACTUALIZADAS)',
-          topic: 'Programming Fundamentals - Conceptos Actualizados'
+          instructions:
+            'Gira la ruleta y responde las preguntas sobre conceptos fundamentales de programación. (INSTRUCCIONES ACTUALIZADAS)',
+          topic: 'Programming Fundamentals - Conceptos Actualizados',
         },
       },
       matching_update: {
@@ -823,19 +867,23 @@ export class ExerciseGeneratorController {
           pairs: [
             {
               term: 'Variable (ACTUALIZADA)',
-              match: 'Espacio en memoria que almacena un valor y puede cambiar durante la ejecución'
+              match:
+                'Espacio en memoria que almacena un valor y puede cambiar durante la ejecución',
             },
             {
               term: 'Función',
-              match: 'Bloque de código reutilizable que realiza una tarea específica'
+              match:
+                'Bloque de código reutilizable que realiza una tarea específica',
             },
             {
               term: 'Algoritmo (NUEVO TÉRMINO)',
-              match: 'Secuencia de pasos lógicos para resolver un problema'
-            }
+              match: 'Secuencia de pasos lógicos para resolver un problema',
+            },
           ],
-          instructions: 'Empareja cada concepto de programación con su definición correcta. (INSTRUCCIONES ACTUALIZADAS)',
-          topic: 'Programming Fundamentals - Conceptos y Definiciones Actualizados'
+          instructions:
+            'Empareja cada concepto de programación con su definición correcta. (INSTRUCCIONES ACTUALIZADAS)',
+          topic:
+            'Programming Fundamentals - Conceptos y Definiciones Actualizados',
         },
       },
     },
@@ -865,11 +913,16 @@ export class ExerciseGeneratorController {
   @ApiBadRequestResponse({
     description: 'Invalid request parameters',
   })
-  async updateExercise(@Body() request: ExerciseUpdateRequestDTO): Promise<ExerciseResponseDto> {
+  async updateExercise(
+    @Body() request: ExerciseUpdateRequestDTO,
+  ): Promise<ExerciseResponseDto> {
     try {
       return await this.exerciseGeneratorService.updateExercise(request);
     } catch (error) {
-      if (error.message === 'Only teachers can perform this action' || error.name === 'ForbiddenException') {
+      if (
+        error.message === 'Only teachers can perform this action' ||
+        error.name === 'ForbiddenException'
+      ) {
         throw new HttpException(
           {
             statusCode: HttpStatus.FORBIDDEN,
@@ -880,8 +933,11 @@ export class ExerciseGeneratorController {
           HttpStatus.FORBIDDEN,
         );
       }
-      
-      if (error.message === 'Exercise not found or access denied' || error.name === 'NotFoundException') {
+
+      if (
+        error.message === 'Exercise not found or access denied' ||
+        error.name === 'NotFoundException'
+      ) {
         throw new HttpException(
           {
             statusCode: HttpStatus.NOT_FOUND,
@@ -892,7 +948,7 @@ export class ExerciseGeneratorController {
           HttpStatus.NOT_FOUND,
         );
       }
-      
+
       throw new HttpException(
         {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -904,6 +960,4 @@ export class ExerciseGeneratorController {
       );
     }
   }
-
-
 }

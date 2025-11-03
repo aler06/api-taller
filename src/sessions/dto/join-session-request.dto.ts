@@ -1,13 +1,22 @@
-import { IsString, IsNotEmpty, IsMongoId, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsMongoId,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApiSchema } from '@nestjs/swagger';
 
-@ApiSchema({ name: 'JoinSessionRequestDTO', description: 'Join session request DTO' })
+@ApiSchema({
+  name: 'JoinSessionRequestDTO',
+  description: 'Join session request DTO',
+})
 export class JoinSessionRequestDTO {
   @ApiProperty({
     description: 'ID of the student joining the session',
     example: '507f1f77bcf86cd799439013',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'Student ID is required' })
@@ -18,7 +27,7 @@ export class JoinSessionRequestDTO {
     description: 'Access code for the session',
     example: 'ABC123',
     minLength: 6,
-    maxLength: 10
+    maxLength: 10,
   })
   @IsString()
   @IsNotEmpty({ message: 'Access code is required' })

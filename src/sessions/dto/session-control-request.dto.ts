@@ -3,12 +3,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ApiSchema } from '@nestjs/swagger';
 import { SessionStatus } from '../model/session.model';
 
-@ApiSchema({ name: 'SessionControlRequestDTO', description: 'Session control request DTO' })
+@ApiSchema({
+  name: 'SessionControlRequestDTO',
+  description: 'Session control request DTO',
+})
 export class SessionControlRequestDTO {
   @ApiProperty({
     description: 'ID of the session to control',
     example: '507f1f77bcf86cd799439014',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'Session ID is required' })
@@ -18,7 +21,7 @@ export class SessionControlRequestDTO {
   @ApiProperty({
     description: 'ID of the teacher controlling the session',
     example: '507f1f77bcf86cd799439011',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'Teacher ID is required' })
@@ -28,9 +31,11 @@ export class SessionControlRequestDTO {
   @ApiProperty({
     description: 'Action to perform on the session',
     example: 'active',
-    enum: SessionStatus
+    enum: SessionStatus,
   })
-  @IsEnum(SessionStatus, { message: 'Status must be one of: waiting, active, finished, cancelled' })
+  @IsEnum(SessionStatus, {
+    message: 'Status must be one of: waiting, active, finished, cancelled',
+  })
   @IsNotEmpty({ message: 'Status is required' })
   status: SessionStatus;
 }

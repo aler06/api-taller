@@ -1,17 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-export type SessionDocument = Session & Document & {
-  _id: Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type SessionDocument = Session &
+  Document & {
+    _id: Types.ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+  };
 
 export enum SessionStatus {
   WAITING = 'waiting',
   ACTIVE = 'active',
   FINISHED = 'finished',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 @Schema({ timestamps: true })

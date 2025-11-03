@@ -5,7 +5,7 @@ export class ExerciseByIdRequestDTO {
   @ApiProperty({
     description: 'ID of the exercise to retrieve/delete',
     example: '507f1f77bcf86cd799439014',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'Exercise ID is required' })
@@ -15,7 +15,7 @@ export class ExerciseByIdRequestDTO {
   @ApiProperty({
     description: 'ID of the user requesting the exercise',
     example: '507f1f77bcf86cd799439011',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'User ID is required' })

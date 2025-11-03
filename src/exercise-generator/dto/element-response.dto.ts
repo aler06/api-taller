@@ -13,4 +13,3 @@ export class ElementResponseDto {
   })
   texto: string;
 }
-

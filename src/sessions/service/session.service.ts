@@ -1,13 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, Document } from 'mongoose';
-import { Session, SessionDocument, SessionStatus } from '../model/session.model';
+import {
+  Session,
+  SessionDocument,
+  SessionStatus,
+} from '../model/session.model';
 import { CreateSessionRequestDTO } from '../dto/create-session-request.dto';
 import { JoinSessionRequestDTO } from '../dto/join-session-request.dto';
 import { SessionResponseDTO } from '../dto/session-response.dto';
 import { Role } from '../../users/enum/role.enum';
 import { User } from '../../users/model/user.model';
-import { Exercise, ExerciseDocument } from '../../exercise-generator/model/exercise.model';
+import {
+  Exercise,
+  ExerciseDocument,
+} from '../../exercise-generator/model/exercise.model';
 
 @Injectable()
 export class SessionService {
@@ -17,37 +29,49 @@ export class SessionService {
     @InjectModel(Exercise.name) private exerciseModel: Model<ExerciseDocument>,
   ) {}
 
-  async createSession(createSessionDto: CreateSessionRequestDTO): Promise<SessionResponseDTO> {
+  async createSession(
+    createSessionDto: CreateSessionRequestDTO,
+  ): Promise<SessionResponseDTO> {
     // Validate teacher exists and has teacher role
-    const teacher = await this.userModel.findById(createSessionDto.teacherId).select('firstName lastName email role isActive createdAt updatedAt');
+    const teacher = await this.userModel
+      .findById(createSessionDto.teacherId)
+      .select('firstName lastName email role isActive createdAt updatedAt');
     if (!teacher || teacher.role !== Role.TEACHER) {
-      throw new BadRequestException('Invalid teacher ID or user is not a teacher');
+      throw new BadRequestException(
+        'Invalid teacher ID or user is not a teacher',
+      );
     }
 
     // Validate exercises exist
-    const exercises = await this.exerciseModel.find({ 
-      _id: { $in: createSessionDto.exerciseIds }
+    const exercises = await this.exerciseModel.find({
+      _id: { $in: createSessionDto.exerciseIds },
     });
-    
+
     if (exercises.length !== createSessionDto.exerciseIds.length) {
       throw new BadRequestException('One or more exercises not found');
     }
 
     // Verify all exercises belong to the teacher
-    const invalidExercises = exercises.filter(exercise => exercise.userId.toString() !== createSessionDto.teacherId);
+    const invalidExercises = exercises.filter(
+      (exercise) => exercise.userId.toString() !== createSessionDto.teacherId,
+    );
     if (invalidExercises.length > 0) {
-      throw new ForbiddenException('You can only create sessions for your own exercises');
+      throw new ForbiddenException(
+        'You can only create sessions for your own exercises',
+      );
     }
 
     // Generate unique access code
     const accessCode = this.generateAccessCode();
-    
+
     // Create shareable link
     const shareableLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/session/join/${accessCode}`;
 
     const sessionData = {
       teacherId: new Types.ObjectId(createSessionDto.teacherId),
-      exerciseIds: createSessionDto.exerciseIds.map(id => new Types.ObjectId(id)),
+      exerciseIds: createSessionDto.exerciseIds.map(
+        (id) => new Types.ObjectId(id),
+      ),
       name: createSessionDto.name,
       description: createSessionDto.description,
       accessCode,
@@ -66,7 +90,9 @@ export class SessionService {
     return this.mapToSessionResponse(savedSession, teacher, exercises);
   }
 
-  async joinSession(joinSessionDto: JoinSessionRequestDTO): Promise<SessionResponseDTO> {
+  async joinSession(
+    joinSessionDto: JoinSessionRequestDTO,
+  ): Promise<SessionResponseDTO> {
     // Find session by access code
     const session = await this.sessionModel
       .findOne({ accessCode: joinSessionDto.accessCode })
@@ -75,33 +101,48 @@ export class SessionService {
       .populate('participants');
 
     if (!session) {
-      throw new NotFoundException('Session not found with the provided access code');
+      throw new NotFoundException(
+        'Session not found with the provided access code',
+      );
     }
 
     // Validate student exists and has student role
-    const student = await this.userModel.findById(joinSessionDto.studentId).select('firstName lastName email role isActive createdAt updatedAt');
+    const student = await this.userModel
+      .findById(joinSessionDto.studentId)
+      .select('firstName lastName email role isActive createdAt updatedAt');
     if (!student || student.role !== Role.STUDENT) {
-      throw new BadRequestException('Invalid student ID or user is not a student');
+      throw new BadRequestException(
+        'Invalid student ID or user is not a student',
+      );
     }
 
     // Check if session allows late join
     if (session.status === SessionStatus.ACTIVE && !session.allowLateJoin) {
-      throw new BadRequestException('Session has already started and late join is not allowed');
+      throw new BadRequestException(
+        'Session has already started and late join is not allowed',
+      );
     }
 
     // Check if session is still joinable
-    if (session.status === SessionStatus.FINISHED || session.status === SessionStatus.CANCELLED) {
+    if (
+      session.status === SessionStatus.FINISHED ||
+      session.status === SessionStatus.CANCELLED
+    ) {
       throw new BadRequestException('Session has ended or been cancelled');
     }
 
     // Check if student is already in the session
     const isAlreadyParticipant = session.participants.some(
-      (participantId) => participantId.toString() === joinSessionDto.studentId
+      (participantId) => participantId.toString() === joinSessionDto.studentId,
     );
 
     if (isAlreadyParticipant) {
       // Return current session state if already joined
-      return this.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
+      return this.mapToSessionResponse(
+        session,
+        session.teacherId,
+        session.exerciseIds,
+      );
     }
 
     // Check if session is full
@@ -124,7 +165,11 @@ export class SessionService {
       throw new NotFoundException('Session not found after update');
     }
 
-    return this.mapToSessionResponse(updatedSession, updatedSession.teacherId, updatedSession.exerciseIds);
+    return this.mapToSessionResponse(
+      updatedSession,
+      updatedSession.teacherId,
+      updatedSession.exerciseIds,
+    );
   }
 
   async getSessionsByTeacher(teacherId: string): Promise<SessionResponseDTO[]> {
@@ -135,8 +180,12 @@ export class SessionService {
       .populate('participants')
       .sort({ createdAt: -1 });
 
-    return sessions.map(session => 
-      this.mapToSessionResponse(session, session.teacherId, session.exerciseIds)
+    return sessions.map((session) =>
+      this.mapToSessionResponse(
+        session,
+        session.teacherId,
+        session.exerciseIds,
+      ),
     );
   }
 
@@ -148,8 +197,12 @@ export class SessionService {
       .populate('participants')
       .sort({ createdAt: -1 });
 
-    return sessions.map(session => 
-      this.mapToSessionResponse(session, session.teacherId, session.exerciseIds)
+    return sessions.map((session) =>
+      this.mapToSessionResponse(
+        session,
+        session.teacherId,
+        session.exerciseIds,
+      ),
     );
   }
 
@@ -164,18 +217,27 @@ export class SessionService {
       throw new NotFoundException('Session not found');
     }
 
-    return this.mapToSessionResponse(session, session.teacherId, session.exerciseIds);
+    return this.mapToSessionResponse(
+      session,
+      session.teacherId,
+      session.exerciseIds,
+    );
   }
 
-  async startSession(sessionId: string, teacherId: string): Promise<SessionResponseDTO> {
+  async startSession(
+    sessionId: string,
+    teacherId: string,
+  ): Promise<SessionResponseDTO> {
     const session = await this.sessionModel.findById(sessionId);
-    
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
     if (session.teacherId.toString() !== teacherId) {
-      throw new ForbiddenException('Only the session creator can start the session');
+      throw new ForbiddenException(
+        'Only the session creator can start the session',
+      );
     }
 
     if (session.status !== SessionStatus.WAITING) {
@@ -185,21 +247,26 @@ export class SessionService {
     session.status = SessionStatus.ACTIVE;
     session.startTime = new Date();
     session.endTime = new Date(Date.now() + session.duration * 60 * 1000); // Add duration in milliseconds
-    
+
     await session.save();
 
     return this.getSessionById(sessionId);
   }
 
-  async endSession(sessionId: string, teacherId: string): Promise<SessionResponseDTO> {
+  async endSession(
+    sessionId: string,
+    teacherId: string,
+  ): Promise<SessionResponseDTO> {
     const session = await this.sessionModel.findById(sessionId);
-    
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
     if (session.teacherId.toString() !== teacherId) {
-      throw new ForbiddenException('Only the session creator can end the session');
+      throw new ForbiddenException(
+        'Only the session creator can end the session',
+      );
     }
 
     if (session.status !== SessionStatus.ACTIVE) {
@@ -208,21 +275,26 @@ export class SessionService {
 
     session.status = SessionStatus.FINISHED;
     session.endTime = new Date();
-    
+
     await session.save();
 
     return this.getSessionById(sessionId);
   }
 
-  async cancelSession(sessionId: string, teacherId: string): Promise<SessionResponseDTO> {
+  async cancelSession(
+    sessionId: string,
+    teacherId: string,
+  ): Promise<SessionResponseDTO> {
     const session = await this.sessionModel.findById(sessionId);
-    
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
     if (session.teacherId.toString() !== teacherId) {
-      throw new ForbiddenException('Only the session creator can cancel the session');
+      throw new ForbiddenException(
+        'Only the session creator can cancel the session',
+      );
     }
 
     if (session.status === SessionStatus.FINISHED) {
@@ -230,7 +302,7 @@ export class SessionService {
     }
 
     session.status = SessionStatus.CANCELLED;
-    
+
     await session.save();
 
     return this.getSessionById(sessionId);
@@ -238,17 +310,21 @@ export class SessionService {
 
   async deleteSession(sessionId: string, teacherId: string): Promise<void> {
     const session = await this.sessionModel.findById(sessionId);
-    
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
     if (session.teacherId.toString() !== teacherId) {
-      throw new ForbiddenException('Only the session creator can delete the session');
+      throw new ForbiddenException(
+        'Only the session creator can delete the session',
+      );
     }
 
     if (session.status === SessionStatus.ACTIVE) {
-      throw new BadRequestException('Cannot delete an active session. Please end or cancel the session first');
+      throw new BadRequestException(
+        'Cannot delete an active session. Please end or cancel the session first',
+      );
     }
 
     await this.sessionModel.findByIdAndDelete(sessionId);
@@ -256,13 +332,13 @@ export class SessionService {
 
   async addParticipant(sessionId: string, studentId: string): Promise<void> {
     const session = await this.sessionModel.findById(sessionId);
-    
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
     const studentObjectId = new Types.ObjectId(studentId);
-    
+
     if (!session.participants.includes(studentObjectId)) {
       session.participants.push(studentObjectId);
       await session.save();
@@ -271,24 +347,27 @@ export class SessionService {
 
   async removeParticipant(sessionId: string, studentId: string): Promise<void> {
     const session = await this.sessionModel.findById(sessionId);
-    
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
     session.participants = session.participants.filter(
-      participantId => participantId.toString() !== studentId
+      (participantId) => participantId.toString() !== studentId,
     );
-    
+
     await session.save();
   }
 
   // Helper methods for WebSocket gateway
-  async validateSessionAccess(sessionId: string, accessCode: string): Promise<any> {
+  async validateSessionAccess(
+    sessionId: string,
+    accessCode: string,
+  ): Promise<any> {
     const session = await this.sessionModel
       .findOne({ _id: sessionId, accessCode })
       .populate('exerciseIds');
-    
+
     return session;
   }
 
@@ -298,42 +377,53 @@ export class SessionService {
       .populate('teacherId')
       .populate('exerciseIds')
       .populate('participants');
-    
+
     return session;
   }
 
   async findActiveSessionByAccessCode(accessCode: string): Promise<any> {
     const session = await this.sessionModel
-      .findOne({ 
+      .findOne({
         accessCode,
-        status: { $in: [SessionStatus.WAITING, SessionStatus.ACTIVE] }
+        status: { $in: [SessionStatus.WAITING, SessionStatus.ACTIVE] },
       })
       .populate('teacherId')
       .populate('exerciseIds')
       .populate('participants');
-    
+
     return session;
   }
 
   async getUserById(userId: string): Promise<any> {
-    return this.userModel.findById(userId).select('firstName lastName email role isActive createdAt updatedAt');
+    return this.userModel
+      .findById(userId)
+      .select('firstName lastName email role isActive createdAt updatedAt');
   }
 
   async getTestUsers(): Promise<any[]> {
     // For development/testing only - get a few users
-    return this.userModel.find().select('firstName lastName email role isActive createdAt updatedAt').limit(10);
+    return this.userModel
+      .find()
+      .select('firstName lastName email role isActive createdAt updatedAt')
+      .limit(10);
   }
 
   // Method to process answers (placeholder - would need more complex logic)
   async processAnswer(
-    sessionId: string, 
-    userId: string, 
-    questionId: string, 
-    answer: string, 
-    timeSpent: number
-  ): Promise<{ correct: boolean; score: number; correctAnswer: string; explanation: string }> {
-    
-    const session = await this.sessionModel.findById(sessionId).populate('exerciseIds');
+    sessionId: string,
+    userId: string,
+    questionId: string,
+    answer: string,
+    timeSpent: number,
+  ): Promise<{
+    correct: boolean;
+    score: number;
+    correctAnswer: string;
+    explanation: string;
+  }> {
+    const session = await this.sessionModel
+      .findById(sessionId)
+      .populate('exerciseIds');
     if (!session) {
       throw new NotFoundException('Session not found');
     }
@@ -341,19 +431,22 @@ export class SessionService {
     // Find the question in any of the exercises
     const exercises = session.exerciseIds as any[];
     let question: any = null;
-    
+
     for (const exercise of exercises) {
-      question = exercise.questions?.find((q: any) => q._id.toString() === questionId);
+      question = exercise.questions?.find(
+        (q: any) => q._id.toString() === questionId,
+      );
       if (question) break;
     }
-    
+
     if (!question) {
       throw new NotFoundException('Question not found');
     }
 
-    const correct = question.correct_answer.toLowerCase() === answer.toLowerCase();
+    const correct =
+      question.correct_answer.toLowerCase() === answer.toLowerCase();
     const baseScore = correct ? 100 : 0;
-    
+
     // Calculate time bonus (faster answers get more points)
     const timeBonus = correct ? Math.max(0, 50 - timeSpent) : 0;
     const finalScore = baseScore + timeBonus;
@@ -375,7 +468,11 @@ export class SessionService {
     return result;
   }
 
-  public mapToSessionResponse(session: any, teacher: any, exercises: any[]): SessionResponseDTO {
+  public mapToSessionResponse(
+    session: any,
+    teacher: any,
+    exercises: any[],
+  ): SessionResponseDTO {
     return {
       id: session._id.toString(),
       teacher: {
@@ -406,16 +503,17 @@ export class SessionService {
       duration: session.duration,
       startTime: session.startTime,
       endTime: session.endTime,
-      participants: session.participants?.map((participant: any) => ({
-        _id: participant._id?.toString() || participant.toString(),
-        firstName: participant.firstName || '',
-        lastName: participant.lastName || '',
-        email: participant.email || '',
-        role: participant.role || 'student',
-        isActive: participant.isActive || true,
-        createdAt: participant.createdAt || new Date(),
-        updatedAt: participant.updatedAt || new Date(),
-      })) || [],
+      participants:
+        session.participants?.map((participant: any) => ({
+          _id: participant._id?.toString() || participant.toString(),
+          firstName: participant.firstName || '',
+          lastName: participant.lastName || '',
+          email: participant.email || '',
+          role: participant.role || 'student',
+          isActive: participant.isActive || true,
+          createdAt: participant.createdAt || new Date(),
+          updatedAt: participant.updatedAt || new Date(),
+        })) || [],
       maxParticipants: session.maxParticipants,
       shareableLink: session.shareableLink,
       allowLateJoin: session.allowLateJoin,

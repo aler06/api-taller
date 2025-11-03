@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsMongoId, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsMongoId,
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { Game } from '../enum/game.enum';
@@ -10,7 +18,7 @@ export class QuestionUpdateDto {
   @ApiProperty({
     description: 'The question text (for quiz)',
     example: 'What is the capital of France?',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -19,7 +27,7 @@ export class QuestionUpdateDto {
   @ApiProperty({
     description: 'Sentence with blank to fill (for fill_in_the_blank)',
     example: 'The capital of France is ____.',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -29,7 +37,7 @@ export class QuestionUpdateDto {
     description: 'Multiple choice options',
     example: ['Paris', 'London', 'Madrid', 'Berlin'],
     type: [String],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -38,7 +46,7 @@ export class QuestionUpdateDto {
 
   @ApiProperty({
     description: 'The correct answer',
-    example: 'Paris'
+    example: 'Paris',
   })
   @IsString()
   @IsNotEmpty()
@@ -46,7 +54,7 @@ export class QuestionUpdateDto {
 
   @ApiProperty({
     description: 'Explanation for the correct answer',
-    example: 'Paris is the capital and largest city of France.'
+    example: 'Paris is the capital and largest city of France.',
   })
   @IsString()
   @IsNotEmpty()
@@ -56,7 +64,7 @@ export class QuestionUpdateDto {
 export class CardUpdateDto {
   @ApiProperty({
     description: 'Front text of the card',
-    example: '¿Qué es Python?'
+    example: '¿Qué es Python?',
   })
   @IsString()
   @IsNotEmpty()
@@ -64,7 +72,8 @@ export class CardUpdateDto {
 
   @ApiProperty({
     description: 'Back text of the card (answer/explanation)',
-    example: 'Es un lenguaje de programación interpretado, de alto nivel y con tipado dinámico.'
+    example:
+      'Es un lenguaje de programación interpretado, de alto nivel y con tipado dinámico.',
   })
   @IsString()
   @IsNotEmpty()
@@ -74,7 +83,7 @@ export class CardUpdateDto {
 export class ElementUpdateDto {
   @ApiProperty({
     description: 'Unique identifier for the element',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsNotEmpty()
@@ -82,7 +91,7 @@ export class ElementUpdateDto {
 
   @ApiProperty({
     description: 'Text content of the element to be ordered',
-    example: 'Importar librerías necesarias'
+    example: 'Importar librerías necesarias',
   })
   @IsString()
   @IsNotEmpty()
@@ -93,7 +102,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'ID of the exercise to update',
     example: '507f1f77bcf86cd799439014',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'Exercise ID is required' })
@@ -103,7 +112,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'ID of the user (professor) updating the exercise',
     example: '507f1f77bcf86cd799439011',
-    required: true
+    required: true,
   })
   @IsString()
   @IsNotEmpty({ message: 'User ID is required' })
@@ -113,7 +122,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated questions for the exercise',
     type: [QuestionUpdateDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -124,7 +133,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated word (for hangman game)',
     example: 'programming',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -133,7 +142,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated hint for the word or exercise',
     example: 'Related to computer science',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -142,7 +151,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated topic for the exercise',
     example: 'Advanced Programming Concepts',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -152,7 +161,7 @@ export class ExerciseUpdateRequestDTO {
     description: 'Updated difficulty level',
     example: 'advanced',
     enum: ['beginner', 'intermediate', 'advanced'],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -161,7 +170,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated target audience',
     example: 'university students',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -170,7 +179,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated cards for flip cards game',
     type: [CardUpdateDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -180,8 +189,9 @@ export class ExerciseUpdateRequestDTO {
 
   @ApiProperty({
     description: 'Updated instructions for the exercise',
-    example: 'Da la vuelta a cada tarjeta para aprender o repasar conceptos clave.',
-    required: false
+    example:
+      'Da la vuelta a cada tarjeta para aprender o repasar conceptos clave.',
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -190,7 +200,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated elements for quick sort/drag and drop game',
     type: [ElementUpdateDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -202,7 +212,7 @@ export class ExerciseUpdateRequestDTO {
     description: 'Updated correct order of elements (array of element IDs)',
     type: [Number],
     example: [1, 2, 3, 4],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -210,9 +220,11 @@ export class ExerciseUpdateRequestDTO {
   correctOrder?: number[];
 
   @ApiProperty({
-    description: 'Updated explanation of the correct order or exercise solution',
-    example: 'El flujo lógico de un programa en Python comienza importando librerías...',
-    required: false
+    description:
+      'Updated explanation of the correct order or exercise solution',
+    example:
+      'El flujo lógico de un programa en Python comienza importando librerías...',
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -221,7 +233,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated true/false questions for the exercise',
     type: [TrueFalseUpdateDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -232,7 +244,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated phrases for the roulette game',
     type: [PhraseUpdateDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -243,7 +255,7 @@ export class ExerciseUpdateRequestDTO {
   @ApiProperty({
     description: 'Updated pairs for the matching game',
     type: [PairUpdateDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
