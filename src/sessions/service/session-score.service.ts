@@ -38,7 +38,30 @@ export class SessionScoreService {
   ) {}
 
   /**
-   * Initialize or get existing score record for a student in a session
+   * 📊 MÉTODO DE GUARDADO EN BD: Inicializar registro de puntaje
+   * 
+   * OPERACIÓN: CREATE (new this.sessionScoreModel() + save())
+   * TABLA: SessionScore (MongoDB Collection)
+   * 
+   * Este método crea un nuevo documento en la colección SessionScore cuando:
+   * - Un estudiante se une a una sesión por primera vez
+   * - Se necesita inicializar el tracking de puntaje
+   * 
+   * CAMPOS GUARDADOS:
+   * - sessionId: ID de la sesión
+   * - userId: ID del usuario (opcional para guests)
+   * - nombre: Nombre del estudiante
+   * - correo: Email del estudiante
+   * - puntajeFinal: 0 (inicial)
+   * - tiempoTotal: 0 (inicial)
+   * - respuestas: Map vacío
+   * - completado: false
+   * 
+   * @param sessionId ID de la sesión
+   * @param userId ID del usuario (opcional para guests)
+   * @param nombre Nombre del estudiante
+   * @param correo Email del estudiante
+   * @returns Registro de puntaje inicializado
    */
   async initializeScore(
     sessionId: string,
@@ -72,7 +95,8 @@ export class SessionScoreService {
       return this.mapToScoreResponse(scoreRecord);
     }
 
-    // Create new score record
+    // 🔥 GUARDADO EN BD: Crear nuevo registro de puntaje
+    // MÉTODO MONGOOSE: new Model() + save()
     const newScore = new this.sessionScoreModel({
       sessionId: new Types.ObjectId(sessionId),
       userId: userId ? new Types.ObjectId(userId) : undefined,
@@ -84,12 +108,35 @@ export class SessionScoreService {
       completado: false,
     });
 
+    // 💾 PERSISTENCIA: Guarda el documento en MongoDB
     const savedScore = await newScore.save();
     return this.mapToScoreResponse(savedScore);
   }
 
   /**
-   * Submit an answer and update the score
+   * 📝 MÉTODO DE GUARDADO EN BD: Enviar respuesta y actualizar puntaje
+   * 
+   * OPERACIÓN: UPDATE (modificación directa + save())
+   * TABLA: SessionScore (MongoDB Collection)
+   * 
+   * Este método actualiza un documento existente en SessionScore cuando:
+   * - Un estudiante responde una pregunta
+   * - Se necesita actualizar el puntaje acumulado
+   * - Se registra el tiempo gastado por pregunta
+   * 
+   * CAMPOS ACTUALIZADOS:
+   * - puntajeFinal: Se incrementa según respuesta correcta
+   * - tiempoTotal: Se suma el tiempo gastado
+   * - respuestas: Map con detalles de cada respuesta
+   * 
+   * LÓGICA DE PUNTAJE:
+   * - Respuesta nueva: suma puntos
+   * - Respuesta mejorada: reemplaza puntos
+   * - Respuesta peor: mantiene puntos anteriores
+   * 
+   * @param submitAnswerDto Datos de la respuesta enviada
+   * @param userId ID del usuario (opcional para guests)
+   * @returns Resultado de la evaluación y puntaje actualizado
    */
   async submitAnswer(
     submitAnswerDto: SubmitAnswerDTO,
@@ -269,7 +316,9 @@ export class SessionScoreService {
     // Round to 2 decimal places
     scoreRecord.puntajeFinal = Math.round(scoreRecord.puntajeFinal * 100) / 100;
 
-    // Save and reload to ensure we have the latest data
+    // GUARDADO EN BD: Actualizar registro existente
+    // MÉTODO MONGOOSE: Modificación directa de propiedades + save()
+    // OPERACIÓN: UPDATE en MongoDB
     const savedScore = await scoreRecord.save();
 
     console.log('💾 Score saved:', {
@@ -302,8 +351,23 @@ export class SessionScoreService {
   }
 
   /**
-   * Mark session as completed for a student
-   * Now accepts all session results in a single request
+   * ✅ MÉTODO DE GUARDADO EN BD: Completar sesión (GUARDADO FINAL)
+   * 
+   * Este es el MÉTODO PRINCIPAL donde se guarda el puntaje final cuando:
+   * - Un estudiante completa toda la sesión
+   * - Se envían todos los resultados finales
+   * - Se marca la sesión como completada
+   * 
+   * CAMPOS FINALES GUARDADOS:
+   * - puntajeFinal: Puntaje final (máximo 20 puntos)
+   * - tiempoTotal: Tiempo total gastado en segundos
+   * - respuestas: Map completo con todas las respuestas
+   * - completado: true
+   * - fechaResolucion: Timestamp de finalización
+   * 
+   * @param completeSessionDto Datos completos de la sesión finalizada
+   * @param userId ID del usuario (opcional para guests)
+   * @returns Registro final de puntaje guardado
    */
   async completeSession(
     completeSessionDto: CompleteSessionDTO,
@@ -374,13 +438,16 @@ export class SessionScoreService {
       console.log('⚠️  No final results provided - using existing score');
     }
 
-    // Mark as completed
+    // FINALIZACIÓN: Marcar sesión como completada
     scoreRecord.completado = true;
     scoreRecord.fechaResolucion = new Date();
 
+    // GUARDADO FINAL EN BD: Persistir todos los resultados
+    // MÉTODO MONGOOSE: Modificación directa + save()
+    // OPERACIÓN: UPDATE en MongoDB con estado final
     const savedScore = await scoreRecord.save();
 
-    console.log('✅ Session completed successfully:', {
+    console.log(' Sesión completada:', {
       id: savedScore._id,
       puntajeFinal: savedScore.puntajeFinal,
       completado: savedScore.completado,

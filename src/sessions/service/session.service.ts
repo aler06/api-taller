@@ -29,6 +29,31 @@ export class SessionService {
     @InjectModel(Exercise.name) private exerciseModel: Model<ExerciseDocument>,
   ) {}
 
+  /**
+   * MÉTODO DE GUARDADO EN BD: Crear nueva sesión
+   * 
+   * OPERACIÓN: CREATE (new this.sessionModel() + save())
+   * TABLA: Session (MongoDB Collection)
+   * 
+   * Este método crea una nueva sesión cuando:
+   * - Un profesor quiere crear una sesión interactiva
+   * - Se seleccionan ejercicios para la sesión
+   * - Se genera un código de acceso único
+   * 
+   * CAMPOS GUARDADOS:
+   * - teacherId: ID del profesor creador
+   * - exerciseIds: Array de IDs de ejercicios
+   * - name: Nombre de la sesión
+   * - description: Descripción
+   * - accessCode: Código de acceso único
+   * - duration: Duración en minutos
+   * - maxParticipants: Máximo de participantes
+   * - status: WAITING (inicial)
+   * - participants: Array vacío
+   * 
+   * @param createSessionDto Datos de la sesión a crear
+   * @returns Sesión creada con toda la información
+   */
   async createSession(
     createSessionDto: CreateSessionRequestDTO,
   ): Promise<SessionResponseDTO> {
@@ -84,6 +109,9 @@ export class SessionService {
       participants: [],
     };
 
+    // 🔥 GUARDADO EN BD: Crear nueva sesión
+    // MÉTODO MONGOOSE: new Model() + save()
+    // OPERACIÓN: CREATE en MongoDB
     const session = new this.sessionModel(sessionData);
     const savedSession = await session.save();
 
@@ -150,7 +178,9 @@ export class SessionService {
       throw new BadRequestException('Session is full');
     }
 
-    // Add student to participants
+    // GUARDADO EN BD: Agregar estudiante a participantes
+    // MÉTODO MONGOOSE: Modificación directa + save()
+    // OPERACIÓN: UPDATE - Agregar participante al array
     session.participants.push(new Types.ObjectId(joinSessionDto.studentId));
     await session.save();
 
@@ -244,6 +274,9 @@ export class SessionService {
       throw new BadRequestException('Session cannot be started');
     }
 
+    // GUARDADO EN BD: Iniciar sesión (cambio de estado)
+    // MÉTODO MONGOOSE: Modificación directa + save()
+    // OPERACIÓN: UPDATE - Cambiar estado a ACTIVE
     session.status = SessionStatus.ACTIVE;
     session.startTime = new Date();
     session.endTime = new Date(Date.now() + session.duration * 60 * 1000); // Add duration in milliseconds
@@ -273,6 +306,9 @@ export class SessionService {
       throw new BadRequestException('Session is not active');
     }
 
+    // GUARDADO EN BD: Finalizar sesión (cambio de estado)
+    // MÉTODO MONGOOSE: Modificación directa + save()
+    // OPERACIÓN: UPDATE - Cambiar estado a FINISHED
     session.status = SessionStatus.FINISHED;
     session.endTime = new Date();
 
@@ -301,6 +337,9 @@ export class SessionService {
       throw new BadRequestException('Cannot cancel a finished session');
     }
 
+    // GUARDADO EN BD: Cancelar sesión (cambio de estado)
+    // MÉTODO MONGOOSE: Modificación directa + save()
+    // OPERACIÓN: UPDATE - Cambiar estado a CANCELLED
     session.status = SessionStatus.CANCELLED;
 
     await session.save();
@@ -327,6 +366,9 @@ export class SessionService {
       );
     }
 
+    // ELIMINACIÓN EN BD: Borrar sesión
+    // MÉTODO MONGOOSE: findByIdAndDelete()
+    // OPERACIÓN: DELETE - Eliminar sesión de MongoDB
     await this.sessionModel.findByIdAndDelete(sessionId);
   }
 

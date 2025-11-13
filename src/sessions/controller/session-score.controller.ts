@@ -35,6 +35,16 @@ import { Roles } from '../../auth/decorator/roles.decorator';
 import { CurrentUser } from '../../auth/decorator/current-user.decorator';
 import { Role } from '../../users/enum/role.enum';
 
+/**
+ * CONTROLADOR DE PUNTAJES DE SESIONES
+ * 
+ * Maneja todas las operaciones relacionadas con puntajes de estudiantes:
+ * - Inicializar puntaje al unirse a sesión
+ * - Enviar respuestas individuales
+ * - Completar sesión con puntaje final
+ * - Consultar resultados
+ * - Exportar a Excel
+ */
 @ApiTags('session-scores')
 @Controller('session-scores')
 export class SessionScoreController {
@@ -58,6 +68,10 @@ export class SessionScoreController {
     status: HttpStatus.NOT_FOUND,
     description: 'Session not found',
   })
+  /**
+   * INICIALIZAR PUNTAJE
+   * Crea registro de puntaje cuando estudiante se une a sesión
+   */
   async initializeScore(
     @Body() body: { sessionId: string; nombre?: string; correo?: string },
     @CurrentUser() user: any,
@@ -69,7 +83,7 @@ export class SessionScoreController {
     // Para usuarios guest, no pasar el userId (sub) ya que es temporal
     const userId = user.isGuest ? undefined : user.sub;
 
-    // 🔴 VALIDACIÓN: Usuarios guest DEBEN tener correo
+    // VALIDACIÓN: Usuarios guest DEBEN tener correo
     if (!userId && !correo) {
       throw new BadRequestException(
         'Email is required for guest users. Please provide "correo" or use POST /auth/guest with email.',
@@ -104,6 +118,10 @@ export class SessionScoreController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid answer or exercise type not scored',
   })
+  /**
+   * ENVIAR RESPUESTA
+   * Procesa respuesta individual y actualiza puntaje acumulado
+   */
   async submitAnswer(
     @Body() submitAnswerDto: SubmitAnswerDTO,
     @CurrentUser() user: any,
@@ -125,7 +143,7 @@ export class SessionScoreController {
     // Para usuarios guest, no pasar el userId (sub) ya que es temporal
     const userId = user.isGuest ? undefined : user.sub;
 
-    // 🔴 VALIDACIÓN CRÍTICA: Usuarios guest DEBEN tener correo para rastrear puntaje
+    // VALIDACIÓN CRÍTICA: Usuarios guest DEBEN tener correo para rastrear puntaje
     if (!userId && !submitAnswerDto.correo) {
       throw new BadRequestException(
         'Email is required for guest users to track scores across multiple answers. ' +
@@ -196,6 +214,10 @@ export class SessionScoreController {
     status: HttpStatus.NOT_FOUND,
     description: 'Session not found',
   })
+  /**
+   * COMPLETAR SESIÓN
+   * Guarda puntaje final cuando estudiante termina toda la sesión
+   */
   async completeSession(
     @Body() completeSessionDto: CompleteSessionDTO,
     @CurrentUser() user: any,
@@ -234,6 +256,10 @@ export class SessionScoreController {
     status: HttpStatus.FORBIDDEN,
     description: 'Only teachers and admins can access this endpoint',
   })
+  /**
+   * VER RESULTADOS DE SESIÓN
+   * Obtiene todos los puntajes de una sesión (solo profesores/admins)
+   */
   async getSessionScores(
     @Param('sessionId') sessionId: string,
   ): Promise<SessionScoreSummaryDTO> {
@@ -267,6 +293,10 @@ export class SessionScoreController {
     status: HttpStatus.NOT_FOUND,
     description: 'Score record not found',
   })
+  /**
+   * VER MI PUNTAJE
+   * Obtiene el puntaje del estudiante autenticado en una sesión
+   */
   async getStudentScore(
     @Param('sessionId') sessionId: string,
     @Query('correo') correo: string,
@@ -307,6 +337,10 @@ export class SessionScoreController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Guest users cannot access historical scores',
   })
+  /**
+   * VER HISTORIAL DE PUNTAJES
+   * Obtiene todos los puntajes del usuario (no disponible para guests)
+   */
   async getUserScores(
     @CurrentUser() user: any,
   ): Promise<SessionScoreResponseDTO[]> {
@@ -342,6 +376,10 @@ export class SessionScoreController {
     status: HttpStatus.FORBIDDEN,
     description: 'Only teachers and admins can access this endpoint',
   })
+  /**
+   * VER PUNTAJES DE USUARIO ESPECÍFICO
+   * Obtiene puntajes de cualquier usuario (solo profesores/admins)
+   */
   async getUserScoresById(
     @Param('userId') userId: string,
   ): Promise<SessionScoreResponseDTO[]> {
@@ -382,6 +420,10 @@ export class SessionScoreController {
     status: HttpStatus.FORBIDDEN,
     description: 'Only teachers and admins can export scores',
   })
+  /**
+   * EXPORTAR A EXCEL
+   * Descarga resultados de sesión en archivo Excel
+   */
   async exportSessionScores(
     @Param('sessionId') sessionId: string,
     @Res() res: Response,
@@ -429,6 +471,10 @@ export class SessionScoreController {
     status: HttpStatus.FORBIDDEN,
     description: 'Only admins can delete score records',
   })
+  /**
+   * ELIMINAR PUNTAJE
+   * Borra registro de puntaje (solo admins)
+   */
   async deleteScore(@Param('scoreId') scoreId: string): Promise<void> {
     await this.sessionScoreService.deleteScore(scoreId);
   }

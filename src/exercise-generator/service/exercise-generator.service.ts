@@ -61,10 +61,12 @@ export class ExerciseGeneratorService {
         request.gameType,
       );
 
-      // Save exercise to database
+      // GUARDADO EN BD: Crear nuevo ejercicio
+      // MÉTODO MONGOOSE: new Model() + save()
+      // TABLA: Exercise (MongoDB Collection)
+      // OPERACIÓN: CREATE - Guarda ejercicio generado por IA
       const exercise = new this.exerciseModel({
-        userId,
-        game: exerciseDto.game,
+        userId, // 👤 ID del profesor que crea el ejercicio
         questions: exerciseDto.questions?.map((q) => ({
           question: q.question,
           sentence: q.sentence,
@@ -102,6 +104,15 @@ export class ExerciseGeneratorService {
         targetAudience: request.targetAudience,
       });
 
+      // PERSISTENCIA: Guardar ejercicio en MongoDB
+      // CAMPOS GUARDADOS:
+      // - userId: ID del profesor creador
+      // - game: Tipo de juego/ejercicio
+      // - questions: Preguntas generadas por IA
+      // - topic: Tema del ejercicio
+      // - difficulty: Nivel de dificultad
+      // - targetAudience: Audiencia objetivo
+      // - createdAt/updatedAt: Timestamps automáticos
       const savedExercise = await exercise.save();
 
       // Update DTO with database info
@@ -351,10 +362,23 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
     }
   }
 
+  /**
+   * MÉTODO DE ELIMINACIÓN EN BD: Borrar ejercicio
+   * 
+   * OPERACIÓN: DELETE (deleteOne)
+   * TABLA: Exercise (MongoDB Collection)
+   * 
+   * @param exerciseId ID del ejercicio a eliminar
+   * @param userId ID del usuario (debe ser el creador)
+   * @returns true si se eliminó correctamente
+   */
   async deleteExercise(exerciseId: string, userId: string): Promise<boolean> {
     try {
       this.logger.log(`Deleting exercise: ${exerciseId} for user: ${userId}`);
 
+      // 🔥 ELIMINACIÓN EN BD: Borrar ejercicio de MongoDB
+      // MÉTODO MONGOOSE: deleteOne()
+      // OPERACIÓN: DELETE
       const result = await this.exerciseModel
         .deleteOne({ _id: exerciseId, userId })
         .exec();
@@ -366,6 +390,23 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
     }
   }
 
+  /**
+   * MÉTODO DE GUARDADO EN BD: Actualizar ejercicio existente
+   * 
+   * OPERACIÓN: UPDATE (findOneAndUpdate)
+   * TABLA: Exercise (MongoDB Collection)
+   * 
+   * Este método actualiza un ejercicio existente cuando:
+   * - Un profesor modifica un ejercicio que ya creó
+   * - Se necesita actualizar preguntas, configuración, etc.
+   * 
+   * VALIDACIONES:
+   * - El ejercicio debe existir
+   * - Solo el creador puede modificarlo
+   * 
+   * @param request Datos de actualización del ejercicio
+   * @returns Ejercicio actualizado
+   */
   async updateExercise(
     request: ExerciseUpdateRequestDTO,
   ): Promise<ExerciseResponseDto> {
@@ -465,9 +506,18 @@ Responde SOLO con el JSON del juego, sin texto adicional.`;
         }));
       }
 
-      // Update the exercise
+      // GUARDADO EN BD: Actualizar ejercicio existente
+      // MÉTODO MONGOOSE: findOneAndUpdate()
+      // OPERACIÓN: UPDATE en MongoDB
+      // 
+      // Este método busca el ejercicio en la base de datos y lo actualiza con los nuevos datos.
+      // La opción { new: true } indica que se debe retornar el documento actualizado.
       const updatedExercise = await this.exerciseModel
-        .findByIdAndUpdate(request.exerciseId, updateData, { new: true })
+        .findOneAndUpdate(
+          { _id: request.exerciseId, userId: request.userId },
+          updateData,
+          { new: true }, // Retorna el documento actualizado
+        )
         .exec();
 
       if (!updatedExercise) {

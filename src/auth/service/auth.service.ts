@@ -119,6 +119,29 @@ export class AuthService {
     };
   }
 
+  /**
+   * MÉTODO DE GUARDADO EN BD: Registrar nuevo usuario
+   * 
+   * OPERACIÓN: CREATE (new this.userModel() + save())
+   * TABLA: User (MongoDB Collection)
+   * 
+   * Este método crea un nuevo usuario cuando:
+   * - Un usuario se registra en la plataforma
+   * - Se valida que el email no exista
+   * - Se hashea la contraseña por seguridad
+   * 
+   * CAMPOS GUARDADOS:
+   * - firstName: Nombre del usuario
+   * - lastName: Apellido del usuario
+   * - email: Email (debe ser único)
+   * - role: Rol (TEACHER o STUDENT)
+   * - password: Contraseña hasheada
+   * - isActive: true (activo por defecto)
+   * - createdAt/updatedAt: Timestamps automáticos
+   * 
+   * @param registerDto Datos de registro del usuario
+   * @returns Token JWT y datos del usuario registrado
+   */
   async register(
     registerDto: RegisterRequestDto,
   ): Promise<RegisterResponseDto> {
@@ -134,16 +157,19 @@ export class AuthService {
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-      // Crear nuevo usuario
+      // GUARDADO EN BD: Crear nuevo usuario
+      // MÉTODO MONGOOSE: new Model() + save()
+      // OPERACIÓN: CREATE en MongoDB
       const newUser = new this.userModel({
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
         email: registerDto.email,
         role: registerDto.role,
-        password: hashedPassword,
+        password: hashedPassword, // 🔒 Contraseña hasheada con bcrypt
         isActive: true, // Activar automáticamente al registrarse
       });
 
+      // PERSISTENCIA: Guardar usuario en MongoDB
       const savedUser = await newUser.save();
 
       // Generar token JWT
