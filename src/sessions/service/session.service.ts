@@ -10,6 +10,7 @@ import {
   Session,
   SessionDocument,
   SessionStatus,
+  SessionType,
 } from '../model/session.model';
 import { CreateSessionRequestDTO } from '../dto/create-session-request.dto';
 import { JoinSessionRequestDTO } from '../dto/join-session-request.dto';
@@ -86,11 +87,22 @@ export class SessionService {
       );
     }
 
-    // Generate unique access code
-    const accessCode = this.generateAccessCode();
+    const sessionType =
+      createSessionDto.sessionType === 'dynamic'
+        ? SessionType.DYNAMIC
+        : SessionType.NORMAL;
 
-    // Create shareable link
-    const shareableLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/session/join/${accessCode}`;
+    // Generate unique access code only for normal sessions
+    const accessCode =
+      sessionType === SessionType.NORMAL
+        ? this.generateAccessCode()
+        : undefined;
+
+    // Create shareable link only for normal sessions with access code
+    const shareableLink =
+      sessionType === SessionType.NORMAL && accessCode
+        ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/session/join/${accessCode}`
+        : undefined;
 
     const sessionData = {
       teacherId: new Types.ObjectId(createSessionDto.teacherId),
@@ -99,6 +111,7 @@ export class SessionService {
       ),
       name: createSessionDto.name,
       description: createSessionDto.description,
+      sessionType,
       accessCode,
       duration: createSessionDto.duration,
       maxParticipants: createSessionDto.maxParticipants || 50,
@@ -541,6 +554,7 @@ export class SessionService {
       name: session.name,
       description: session.description,
       accessCode: session.accessCode,
+      sessionType: session.sessionType,
       status: session.status,
       duration: session.duration,
       startTime: session.startTime,

@@ -15,6 +15,11 @@ export enum SessionStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum SessionType {
+  NORMAL = 'normal',
+  DYNAMIC = 'dynamic',
+}
+
 @Schema({ timestamps: true })
 export class Session {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
@@ -29,8 +34,11 @@ export class Session {
   @Prop({ required: false })
   description?: string;
 
-  @Prop({ required: true, unique: true })
-  accessCode: string;
+  @Prop({ required: true, enum: SessionType, default: SessionType.NORMAL })
+  sessionType: SessionType;
+
+  @Prop({ required: false, unique: true })
+  accessCode?: string;
 
   @Prop({ required: true, enum: SessionStatus, default: SessionStatus.WAITING })
   status: SessionStatus;
@@ -63,7 +71,7 @@ export class Session {
 export const SessionSchema = SchemaFactory.createForClass(Session);
 
 // Create indexes for better performance
-SessionSchema.index({ accessCode: 1 }, { unique: true });
+SessionSchema.index({ accessCode: 1 }, { unique: true, sparse: true });
 SessionSchema.index({ teacherId: 1 });
 SessionSchema.index({ status: 1 });
 SessionSchema.index({ startTime: 1 });

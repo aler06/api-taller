@@ -74,6 +74,16 @@ export class CreateSessionRequestDTO {
   description?: string;
 
   @ApiProperty({
+    description: 'Type of the session',
+    example: 'normal',
+    enum: ['normal', 'dynamic'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  sessionType?: 'normal' | 'dynamic';
+
+  @ApiProperty({
     description: 'Duration of the session in minutes',
     example: 30,
     minimum: 5,

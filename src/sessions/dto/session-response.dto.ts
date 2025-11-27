@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { SessionStatus } from '../model/session.model';
+import { SessionStatus, SessionType } from '../model/session.model';
 import { ExerciseResponseDto } from '../../exercise-generator/dto/exercise-response.dto';
 import { UserResponseDTO } from '../../users/dto/user-response.dto';
 
@@ -39,8 +39,16 @@ export class SessionResponseDTO {
   @ApiProperty({
     description: 'Access code for students to join',
     example: 'ABC123',
+    required: false,
   })
-  accessCode: string;
+  accessCode?: string;
+
+  @ApiProperty({
+    description: 'Type of the session',
+    example: 'normal',
+    enum: SessionType,
+  })
+  sessionType: SessionType;
 
   @ApiProperty({
     description: 'Current status of the session',
