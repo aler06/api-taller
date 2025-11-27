@@ -437,6 +437,22 @@ export class ExerciseGeneratorController {
         );
       }
 
+      if (
+        typeof error.message === 'string' &&
+        error.message.includes('Límite de solicitudes excedido')
+      ) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message:
+              'Límite de solicitudes excedido. Intente de nuevo en unos minutos.',
+            error: 'Too Many Requests',
+            timestamp: new Date().toISOString(),
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
       throw new HttpException(
         {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
