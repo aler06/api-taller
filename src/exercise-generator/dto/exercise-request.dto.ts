@@ -6,6 +6,7 @@ import {
   MinLength,
   MaxLength,
   IsMongoId,
+  Matches,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ApiSchema } from '@nestjs/swagger';
@@ -33,9 +34,12 @@ export class ExerciseRequestDTO {
     maxLength: 200,
   })
   @IsString()
-  @IsNotEmpty({ message: 'Topic is required' })
-  @MinLength(3, { message: 'Topic must be at least 3 characters long' })
+  @IsNotEmpty({ message: 'El tema es obligatorio' })
+  @MinLength(3, { message: 'El tema debe tener al menos 3 caracteres.' })
   @MaxLength(200, { message: 'Topic must not exceed 200 characters' })
+  @Matches(/[A-Za-zÁÉÍÓÚÜÑ0-9]/, {
+    message: 'El tema debe contener al menos una letra o número',
+  })
   topic: string;
 
   @ApiProperty({

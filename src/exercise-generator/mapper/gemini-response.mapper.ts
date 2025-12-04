@@ -303,6 +303,11 @@ export class GeminiResponseMapper {
       }
       return JSON.parse(jsonMatch[0]);
     } catch (error) {
+      // Log raw response to help debug invalid JSON from Gemini
+      // (Solo para diagnóstico; en producción considerar bajar el nivel de detalle)
+      // eslint-disable-next-line no-console
+      console.error('Gemini raw response that failed to parse:', response);
+
       throw new Error(
         `Invalid JSON response from Gemini API: ${error.message}`,
       );

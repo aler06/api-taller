@@ -44,7 +44,7 @@ export class ExerciseGeneratorService {
 
       const prompt = this.buildPrompt(request);
       const model = this.genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash-lite',
       });
 
       const result = await model.generateContent(prompt);
@@ -67,6 +67,7 @@ export class ExerciseGeneratorService {
       // OPERACIÓN: CREATE - Guarda ejercicio generado por IA
       const exercise = new this.exerciseModel({
         userId, // 👤 ID del profesor que crea el ejercicio
+        game: request.gameType,
         questions: exerciseDto.questions?.map((q) => ({
           question: q.question,
           sentence: q.sentence,
@@ -314,16 +315,22 @@ Ejemplo de schema para matching:
     }
 
     return `El usuario te pedirá que elabores una sesión educativa sobre un tema específico.
-1. Primero, desarrolla la sesión con explicaciones claras, organizadas y fáciles de entender.
-2. Después, crea un juego interactivo relacionado con la sesión. Debe ser un ${request.gameType}.
-3. La salida del juego debe estar en formato schema estructurado en JSON, de manera que sea fácil de procesar por otro sistema.
-4. Si el juego es de tipo ruleta, asegúrate de que las frases sean relevantes para el tema de la sesión, no pongas frases que sean tipo preguntas o que se explique algo.
+    1. Primero, desarrolla la sesión con explicaciones claras, organizadas y fáciles de entender.
+    2. Después, crea un juego interactivo relacionado con la sesión. Debe ser un ${request.gameType}.
+    3. La salida del juego debe estar en formato schema estructurado en JSON, de manera que sea fácil de procesar por otro sistema.
+    4. Si el juego es de tipo ruleta, asegúrate de que las frases sean relevantes para el tema de la sesión, no pongas frases que sean tipo preguntas o que se explique algo.
+    5. El JSON DEBE ser VÁLIDO según la especificación oficial de JSON:
+       - Todas las claves deben ir entre comillas dobles. Ejemplo correcto: {"juego": "quiz"}, ejemplo incorrecto: {juego: "quiz"}.
+       - No utilices comentarios dentro del JSON.
+       - No utilices comas finales al final de listas o de objetos.
+       - Usa true y false en minúsculas para los valores booleanos.
+       - No añadas ningún texto fuera del objeto JSON.
 
-${gameInstructions}
+    ${gameInstructions}
 
-Tema: ${request.topic}${difficultyText}${audienceText}${itemsText}${instructionsText}
+    Tema: ${request.topic}${difficultyText}${audienceText}${itemsText}${instructionsText}
 
-Responde SOLO con el JSON del juego, sin texto adicional.`;
+    Responde SOLO con el JSON del juego, sin texto adicional antes o después.`;
   }
 
   async getUserExercises(userId: string): Promise<ExerciseDocument[]> {
