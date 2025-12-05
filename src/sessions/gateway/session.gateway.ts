@@ -13,6 +13,9 @@ import { JwtAuthGuard } from '../../auth/guard/jwt-auth.guard';
 import { SessionService } from '../service/session.service';
 import { Role } from '../../users/enum/role.enum';
 
+/**
+ * Interfaz que representa un usuario conectado a través de WebSocket
+ */
 interface ConnectedUser {
   userId: string;
   sessionId: string;
@@ -20,6 +23,14 @@ interface ConnectedUser {
   socketId: string;
 }
 
+/**
+ * Gateway WebSocket para gestionar las sesiones en tiempo real.
+ * 
+ * Maneja la comunicación bidireccional entre profesores y estudiantes durante
+ * las sesiones de ejercicios. Utiliza Socket.IO para conexiones WebSocket.
+ * 
+ * @namespace /sessions - Todas las conexiones se realizan bajo este namespace
+ */
 @WebSocketGateway({
   cors: {
     origin: [
@@ -42,14 +53,27 @@ export class SessionGateway
   server: Server;
 
   private logger = new Logger('SessionGateway');
+  /** Mapa que almacena los usuarios conectados, indexado por userId */
   private connectedUsers = new Map<string, ConnectedUser>();
 
   constructor(private readonly sessionService: SessionService) {}
 
+  /**
+   * Maneja la conexión de un nuevo cliente WebSocket.
+   * Se ejecuta automáticamente cuando un cliente se conecta al namespace.
+   * 
+   * @param client - Socket del cliente que se conectó
+   */
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
   }
 
+  /**
+   * Maneja la desconexión de un cliente WebSocket.
+   * Limpia la información del usuario y notifica a otros participantes.
+   * 
+   * @param client - Socket del cliente que se desconectó
+   */
   async handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
 
@@ -72,6 +96,22 @@ export class SessionGateway
     }
   }
 
+  /**
+   * Permite a un usuario unirse a una sesión.
+   * 
+   * Valida la sesión mediante el código de acceso, maneja usuarios temporales
+   * y registrados, y une al cliente a la sala de la sesión.
+   * 
+   * @param data - Datos de la solicitud
+   * @param data.sessionId - ID de la sesión (puede ser diferente al real)
+   * @param data.userId - ID del usuario (puede ser temporal si empieza con 'temp_')
+   * @param data.accessCode - Código de acceso de la sesión
+   * @param client - Socket del cliente que solicita unirse
+   * 
+   * @emits sessionJoined - Confirma al usuario que se unió exitosamente
+   * @emits userJoined - Notifica a otros participantes que un usuario se unió
+   * @emits joinError - Notifica errores al cliente
+   */
   @SubscribeMessage('joinSession')
   async handleJoinSession(
     @MessageBody()
@@ -185,6 +225,20 @@ export class SessionGateway
     }
   }
 
+  /**
+   * Permite a un usuario salir de una sesión.
+   * 
+   * Remueve al usuario de la sala, limpia su información y notifica
+   * a otros participantes.
+   * 
+   * @param data - Datos de la solicitud
+   * @param data.sessionId - ID de la sesión
+   * @param data.userId - ID del usuario que sale
+   * @param client - Socket del cliente que solicita salir
+   * 
+   * @emits sessionLeft - Confirma al usuario que salió exitosamente
+   * @emits userLeft - Notifica a otros participantes que un usuario salió
+   */
   @SubscribeMessage('leaveSession')
   async handleLeaveSession(
     @MessageBody() data: { sessionId: string; userId: string },
@@ -229,6 +283,19 @@ export class SessionGateway
     }
   }
 
+  /**
+   * Inicia una sesión (solo para profesores).
+   * 
+   * Cambia el estado de la sesión a activa y notifica a todos los participantes.
+   * 
+   * @param data - Datos de la solicitud
+   * @param data.sessionId - ID de la sesión a iniciar
+   * @param data.teacherId - ID del profesor que inicia la sesión
+   * @param client - Socket del cliente que solicita iniciar
+   * 
+   * @emits sessionStarted - Notifica a todos los participantes que la sesión inició
+   * @emits startError - Notifica errores al cliente
+   */
   @SubscribeMessage('startSession')
   async handleStartSession(
     @MessageBody() data: { sessionId: string; teacherId: string },
@@ -256,6 +323,20 @@ export class SessionGateway
     }
   }
 
+  /**
+   * Finaliza una sesión (solo para profesores).
+   * 
+   * Cambia el estado de la sesión a finalizada, notifica a todos los participantes
+   * y desconecta a todos los usuarios de la sesión.
+   * 
+   * @param data - Datos de la solicitud
+   * @param data.sessionId - ID de la sesión a finalizar
+   * @param data.teacherId - ID del profesor que finaliza la sesión
+   * @param client - Socket del cliente que solicita finalizar
+   * 
+   * @emits sessionEnded - Notifica a todos los participantes que la sesión finalizó
+   * @emits endError - Notifica errores al cliente
+   */
   @SubscribeMessage('endSession')
   async handleEndSession(
     @MessageBody() data: { sessionId: string; teacherId: string },
@@ -296,6 +377,24 @@ export class SessionGateway
     }
   }
 
+  /**
+   * Procesa una respuesta enviada por un estudiante.
+   * 
+   * Valida la respuesta, calcula el puntaje y notifica tanto al estudiante
+   * como al profesor sobre el resultado.
+   * 
+   * @param data - Datos de la respuesta
+   * @param data.sessionId - ID de la sesión
+   * @param data.userId - ID del estudiante que responde
+   * @param data.questionId - ID de la pregunta
+   * @param data.answer - Respuesta del estudiante
+   * @param data.timeSpent - Tiempo en segundos que tardó en responder
+   * @param client - Socket del cliente que envía la respuesta
+   * 
+   * @emits answerResult - Notifica al estudiante el resultado de su respuesta
+   * @emits studentProgress - Notifica al profesor el progreso del estudiante
+   * @emits answerError - Notifica errores al cliente
+   */
   @SubscribeMessage('submitAnswer')
   async handleSubmitAnswer(
     @MessageBody()
@@ -357,6 +456,18 @@ export class SessionGateway
     }
   }
 
+  /**
+   * Obtiene el estado actual de una sesión.
+   * 
+   * Retorna información sobre la sesión, número de participantes
+   * y usuarios conectados.
+   * 
+   * @param data - Datos de la solicitud
+   * @param data.sessionId - ID de la sesión
+   * @param client - Socket del cliente que solicita el estado
+   * 
+   * @emits sessionStatus - Envía el estado completo de la sesión
+   */
   @SubscribeMessage('getSessionStatus')
   async handleGetSessionStatus(
     @MessageBody() data: { sessionId: string },
@@ -383,6 +494,16 @@ export class SessionGateway
     }
   }
 
+  /**
+   * Actualiza y emite el contador de participantes de una sesión.
+   * 
+   * Calcula el número de usuarios conectados a la sesión y notifica
+   * a todos los participantes del cambio.
+   * 
+   * @param sessionId - ID de la sesión
+   * 
+   * @emits participantCountUpdate - Notifica el nuevo conteo de participantes
+   */
   private updateParticipantCount(sessionId: string) {
     const count = Array.from(this.connectedUsers.values()).filter(
       (u) => u.sessionId === sessionId,
@@ -394,12 +515,31 @@ export class SessionGateway
     });
   }
 
-  // Method to send custom messages from the service
+  /**
+   * Envía un mensaje personalizado a todos los participantes de una sesión.
+   * 
+   * Método público que puede ser utilizado por otros servicios para
+   * enviar eventos personalizados a una sesión completa.
+   * 
+   * @param sessionId - ID de la sesión
+   * @param event - Nombre del evento a emitir
+   * @param data - Datos a enviar
+   */
   public sendToSession(sessionId: string, event: string, data: any) {
     this.server.to(`session-${sessionId}`).emit(event, data);
   }
 
-  // Method to send to specific user
+  /**
+   * Envía un mensaje personalizado a un usuario específico.
+   * 
+   * Método público que puede ser utilizado por otros servicios para
+   * enviar eventos personalizados a un usuario en particular.
+   * 
+   * @param userId - ID del usuario destinatario
+   * @param event - Nombre del evento a emitir
+   * @param data - Datos a enviar
+   */
+  
   public sendToUser(userId: string, event: string, data: any) {
     const user = this.connectedUsers.get(userId);
     if (user) {
